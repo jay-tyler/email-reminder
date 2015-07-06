@@ -1,0 +1,8 @@
+Research Twilio
+Research email libraries for Python
+Rough outline for syntax engine
+Simple request syntax engine
+List of all possible user settings
+List of all possible reminder settings
+Come up with a good name
+Mockups for website views
