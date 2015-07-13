@@ -1,26 +1,27 @@
+#!/usr/bin/env python
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.MIMEImage import MIMEImage
 
 
-def main(fromaddr, toaddrs, subject, text, html, img):
+def send(fromaddr, toaddrs, subject, text, html, img=None):
     msg = MIMEMultipart('mixed')
-    # msg = MIMEText("I'm scattered")
     msg['Subject'] = subject
     msg['From'] = fromaddr
     msg['To'] = toaddrs
 
-    fp = open(img, 'rb')
-    part3 = MIMEImage(fp.read())
-    fp.close()
+    if img is not None:
+        fp = open(img, 'rb')
+        part3 = MIMEImage(fp.read())
+        fp.close()
+        msg.attach(part3)
 
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
 
     msg.attach(part1)
     msg.attach(part2)
-    msg.attach(part3)
 
     username = 'scatterpeas@gmail.com'
     password = 'peapassword'
@@ -33,6 +34,7 @@ def main(fromaddr, toaddrs, subject, text, html, img):
 if __name__ == '__main__':
     fromaddr = 'scatterpeas@gmail.com'
     toaddrs = 'saki.fu86@gmail.com'
+    subject = 'Greeting'
     text = "This is text \n Hi!\nHow are you?\nI'm a scattered pea.\nhttps://www.youtube.com/watch?v=jHm0jmg-sbc"
     html = """
     <html>
@@ -47,5 +49,5 @@ if __name__ == '__main__':
     </html>
      """
     img = 'nmr.jpg'
-    main(fromaddr, toaddrs, 'title', text, html, img)
+    send(fromaddr, toaddrs, subject, text, html, img)
 
