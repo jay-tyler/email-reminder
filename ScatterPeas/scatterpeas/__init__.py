@@ -34,6 +34,9 @@ def main(global_config, **settings):
     config.add_route('login', '/login')
     config.add_route('logout', '/logout')
     config.add_route('list', '/list')
+    config.add_route('detail_reminder', 'detailreminder/{id}')
+    config.add_route('create_reminder', '/createreminder')
+    config.add_route('edit_reminder', 'editreminder/{id}')
     config.scan()
     return config.make_wsgi_app()
 

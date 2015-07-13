@@ -67,19 +67,53 @@ def list_reminders(request):
         return HTTPFound(request.route_url('login'))
 
 
+@view_config(route_name='detail_reminder', renderer='detail_reminder.jinja2')
+def view_one_reminder(request):
+    if not request.authenticated_userid:
+        return HTTPFound(request.route_url('login'))
+    reminder_id = request.matchdict.get('id', None)
+    try:
+        reminder = Reminder.search(reminder_id).one()
+    except NoResultFound:
+        return HTTPNotFound('There is no reminder with this id.')
+    if request.authenticated_userid == reminder.owner:
+        return {'reminder': reminder}
+    else:
+        return HTTPForbidden()
+
+
 @view_config(route_name='create_reminder', renderer='create_reminder.jinja2')
 def create_reminder(request):
-    if request.authenticated_userid:
-        if request.method == 'POST':
-            owner = request.authenticated_userid
-            title = request.params.get('title')
-            payload = request.params.get('payload')
-            delivery_time = request.params.get('delivery_time')
-            return HTTPFound(request.route_url('list'))
-        else:
-            return {}
-    else:
+    if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
+    if request.method == 'POST':
+        owner = request.authenticated_userid
+        title = request.params.get('title')
+        payload = request.params.get('payload')
+        delivery_time = request.params.get('delivery_time')
+        Reminder.write(owner=owner,
+                       title=title,
+                       payload=payload,
+                       delivery_time=delivery_time)
+        return HTTPFound(request.route_url('list'))
+    else:
+        return {}
+
+
+@view_config(route_name='edit_reminder', renderer='edit_reminder.jinja2')
+def edit_reminder(request):
+    if not request.authenticated_userid:
+        return HTTPFound(request.route_url('login'))
+    reminder = Reminder.search(reminder_id).one()
+    if request.method == 'POST':
+        reminder.owner = request.authenticated_userid
+        reminder.title = request.params.get('title')
+        reminder.payload = request.params.get('payload')
+        reminder.delivery_time = request.params.get('delivery_time')
+        return HTTPFound(request.route_url('list'))
+    else:
+        return {'reminder': reminder}
+
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem
