@@ -28,7 +28,7 @@ def do_login(request):
 
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
-def my_view(request):
+def homepage(request):
     return {}
 
 
@@ -57,6 +57,29 @@ def logout(request):
     headers = forget(request)
     return HTTPFound(request.route_url('home'), headers=headers)
 
+
+@view_config(route_name='list', renderer='list.jinja2', factory=ReminderFactory)
+def list_reminders(request):
+    if request.authenticated_userid:
+        reminders = Reminder.search(request.authenticated_userid).all()
+        return {'reminders': reminders}
+    else:
+        return HTTPFound(request.route_url('login'))
+
+
+@view_config(route_name='create_reminder', renderer='create_reminder.jinja2')
+def create_reminder(request):
+    if request.authenticated_userid:
+        if request.method == 'POST':
+            owner = request.authenticated_userid
+            title = request.params.get('title')
+            payload = request.params.get('payload')
+            delivery_time = request.params.get('delivery_time')
+            return HTTPFound(request.route_url('list'))
+        else:
+            return {}
+    else:
+        return HTTPFound(request.route_url('login'))
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem
