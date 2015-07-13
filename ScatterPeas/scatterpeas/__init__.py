@@ -3,7 +3,6 @@ from sqlalchemy import engine_from_config
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 import os
-from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 
 from .models import (
     DBSession,
@@ -39,26 +38,3 @@ def main(global_config, **settings):
     config.add_route('edit_reminder', 'editreminder/{id}')
     config.scan()
     return config.make_wsgi_app()
-
-# this needs to be moved into models once we have them
-
-
-class Reminder(object):
-    @property
-    def __acl__(self):
-        return [
-            (Allow, self.owner, 'edit')
-            (Allow, 'group:admin', 'edit')
-        ]
-
-
-class RootFactory(object):
-    __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS)
-    ]
-
-
-class ReminderFactory(object):
-    __acl__ = [
-        (Allow, Authenticated, 'create')
-    ]

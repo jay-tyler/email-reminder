@@ -1,16 +1,42 @@
 from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPForbidden
+from sqlalchemy.orm.exc import NoResultFound
 # import os
 # from sqlalchemy.orm import scoped_session, sessoinmaker
 # from zope.sqlalchemy import ZopeTransactionExtension
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from pyramid.security import remember, forget
+from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 
 from .models import (
     DBSession,
     MyModel,
     )
+
+
+# this needs to be moved into models once we have them
+
+
+class Reminder(object):
+    @property
+    def __acl__(self):
+        return [
+            (Allow, self.owner, 'edit')
+            (Allow, 'group:admin', 'edit')
+        ]
+
+
+class RootFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS)
+    ]
+
+
+class ReminderFactory(object):
+    __acl__ = [
+        (Allow, Authenticated, 'create')
+    ]
 
 
 def do_login(request):
@@ -104,7 +130,10 @@ def create_reminder(request):
 def edit_reminder(request):
     if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
+    reminder_id = request.matchdict.get('id', None)
     reminder = Reminder.search(reminder_id).one()
+    if reminder.owner != request.authenticated_userid:
+        return HTTPForbidden()
     if request.method == 'POST':
         reminder.owner = request.authenticated_userid
         reminder.title = request.params.get('title')
