@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from email.MIMEImage import MIMEImage
 
 
-def send(fromaddr, toaddrs, subject, text, html, img=None):
+def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
     msg = MIMEMultipart('mixed')
     msg['Subject'] = subject
     msg['From'] = fromaddr
@@ -16,6 +16,8 @@ def send(fromaddr, toaddrs, subject, text, html, img=None):
         part3 = MIMEImage(fp.read())
         fp.close()
         msg.attach(part3)
+    else:
+        pass
 
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
