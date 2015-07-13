@@ -40,9 +40,6 @@ class User(Base):
         return "<User(first=' %s', last=' %s', username=' %s', dflt_medium=' %s')>" % (self.first, self.last, self.username, self.dflt_medium)
 
 
-
-
-
 def init_db():
     engine = sa.create_engine(DATABASE_URL, echo=True)
     Base.metadata.create_all(engine)
