@@ -1,7 +1,11 @@
 from pyramid.response import Response
 from pyramid.view import view_config
-
-from sqlalchemy.exc import DBAPIError
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPForbidden
+# import os
+# from sqlalchemy.orm import scoped_session, sessoinmaker
+# from zope.sqlalchemy import ZopeTransactionExtension
+from cryptacular.bcrypt import BCRYPTPasswordManager
+from pyramid.security import remember, forget
 
 from .models import (
     DBSession,
@@ -9,13 +13,49 @@ from .models import (
     )
 
 
-@view_config(route_name='home', renderer='templates/mytemplate.pt')
+def do_login(request):
+    username = request.params.get('username', None)
+    password = request.params.get('password', None)
+    if not (username and password):
+        raise ValueError('both username and password are required')
+
+    settings = request.registry.settings
+    manager = BCRYPTPasswordManager()
+    if username == settings.get('auth.username', ''):
+        hashed = settings.get('auth.password', '')
+        return manager.check(hashed, password)
+    return False
+
+
+@view_config(route_name='home', renderer='templates/home.jinja2')
 def my_view(request):
-    try:
-        one = DBSession.query(MyModel).filter(MyModel.name == 'one').first()
-    except DBAPIError:
-        return Response(conn_err_msg, content_type='text/plain', status_int=500)
-    return {'one': one, 'project': 'ScatterPeas'}
+    return {}
+
+
+@view_config(route_name='login', renderer="templates/login.jinja2")
+def login(request):
+    """authenticate a user by username/password"""
+    username = request.params.get('username', '')
+    error = ''
+    if request.method == 'POST':
+        error = "Login Failed"
+        authenticated = False
+        try:
+            authenticated = do_login(request)
+        except ValueError as e:
+            error = str(e)
+
+        if authenticated:
+            headers = remember(request, username)
+            return HTTPFound(request.route_url('home'), headers=headers)
+
+    return {'error': error, 'username': username}
+
+
+@view_config(route_name='logout')
+def logout(request):
+    headers = forget(request)
+    return HTTPFound(request.route_url('home'), headers=headers)
 
 
 conn_err_msg = """\
