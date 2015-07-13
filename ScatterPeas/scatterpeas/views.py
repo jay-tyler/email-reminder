@@ -18,13 +18,32 @@ from .models import (
 # this needs to be moved into models once we have them
 
 
+class User(object):
+    @property
+    def __acl__(self):
+        return [
+            (Allow, self.username, 'edit'),
+        ]
+
+    def __init__(self, username, password, groups=None):
+        self.username = username
+        self.password = password
+        self.groups = groups or []
+
+
 class Reminder(object):
     @property
     def __acl__(self):
         return [
-            (Allow, self.owner, 'edit')
-            (Allow, 'group:admin', 'edit')
+            (Allow, self.owner, 'edit'),
+            (Allow, 'group:admin', 'edit'),
         ]
+
+    def __init__(self, owner, title, payload, delivery_time):
+        self.owner = owner
+        self.title = title
+        self.payload = payload
+        self.delivery_time = delivery_time
 
 
 class RootFactory(object):
