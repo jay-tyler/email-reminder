@@ -1,0 +1,43 @@
+{% extends "base.jinja2" %}
+{% block body %}
+<form action="{{ request.route_url('create_user') }}" method="POST" class="add_entry">
+    <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username"/>
+    </div>
+    <div class="field">
+        <label for="password">Password</label>
+        <input type="text" id="password" name="password"/>
+    </div>
+    <div class="field">
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name"/>
+    </div>
+    <div class="field">
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name"/>
+    </div>
+    <div class="field">
+        <label for="email">Email Address</label>
+        <input type="text" id="email" name="email"/>
+    </div>
+    <div class="field">
+        <label for="phone">Phone Number</label>
+        <input type="text" id="phone" name="phone"/>
+    </div>
+    <div class="field">
+        <label for="default_medium">Prefer email or text? (This can be changed per reminder.)</label>
+        <input type="text" id="default_medium" name="default_medium"/>
+    </div>
+    <div class="field">
+        <label for="timezone">Your local timezone (ex. Pacific)</label>
+        <input type="text" id="timezone" name="timezone"/>
+    </div>
+    <div class="control_row">
+        <input id="CUButton" type="submit" value="Submit" name="submit"/>
+    </div>
+</form>
+<script type="text/javascript">
+$("#datetimepicker").datetimepicker();
+</script>
+{% endblock %}

@@ -26,9 +26,17 @@ class User(object):
             (Allow, 'group:admin', 'edit')
         ]
 
-    def __init__(self, username, password, groups=None):
+    def __init__(self, username, password, first_name=None, last_name=None,
+                 email=None, phone=None, default_medium='email',
+                 timezone='Pacific', groups=None):
         self.username = username
         self.password = password
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.phone = phone
+        self.default_medium = default_medium
+        self.timezone = timezone
         self.groups = groups or []
 
 
@@ -183,6 +191,24 @@ def edit_reminder(request):
         return HTTPFound(request.route_url('list'))
     else:
         return {'reminder': reminder}
+
+
+@view_config(route_name='create_user', renderer='templates/create_user.jinja2')
+def create_user(request):
+    if request.method == 'POST':
+        username = request.params.get('username')
+        password = request.params.get('password')
+        first_name = request.params.get('first_name')
+        last_name = request.params.get('last_name')
+        email = request.params.get('email')
+        phone = request.params.get('phone')
+        default_medium = request.params.get('default_medium')
+        timezone = request.params.get('timezone')
+        user = User(username, password, first_name, last_name, email,
+                    phone, default_medium, timezone)
+        USERS[username] = user
+    else:
+        return {}
 
 
 conn_err_msg = """\
