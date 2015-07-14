@@ -143,8 +143,16 @@ class UUID(Base):
         default=datetime.datetime.utcnow,
         nullable=False)
 
+    @classmethod
+    def create_uuid(cls, alias_id, uuid=None, confirmation_state=None, created=None, session=None):
+        if session is None:
+            session = DBSession
+        instance = cls(alias_id=alias_id, uuid=uuid, confirmation_state=confirmation_state, created=created)
+        session.add(instance)
+        return instance
+
     def __repr__(self):
-        return "<UUID(uuid='%s', medium='%s', created='%s', alias_id='%s')>" %  (self.uuid, self.medium, self.created, self.alias_id)
+        return "<UUID(uuid='%s', email_state='%s', created='%s', alias_id='%s')>" %  (self.uuid, self.confirmation_state, self.created, self.alias_id)
 
 
 
