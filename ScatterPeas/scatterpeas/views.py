@@ -59,15 +59,14 @@ USERS = {}
 REMINDERS = {}
 USERS['user1'] = User('user1', 'password')
 USERS['user2'] = User('user2', 'password')
-USERS['admin'] = User('admin', 'password', ['admin'])
+USERS['admin'] = User('admin', 'password', groups=['admin'])
 REMINDERS['myreminder'] = Reminder('user1', 'myreminder', 'take out the garbage', 'a time')
 REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
 
 
 class RootFactory(object):
     __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS),
-        (Allow, Authenticated, 'create')
+        (Allow, 'group:admin', ALL_PERMISSIONS)
     ]
 
     def __init__(self, request):
@@ -220,6 +219,25 @@ def create_user(request):
 def detail_user(request):
     user = request.context
     return {'user': user}
+
+
+@view_config(route_name='edit_user', renderer='templates/edit_user.jinja2', permission='edit')
+def edit_user(request):
+    user = request.context
+    if request.method == 'POST':
+        del REMINDERS[user.username]
+        user.username = request.authenticated_userid
+        user.password = request.params.get('password')
+        user.first_name = request.params.get('first_name')
+        user.last_name = request.params.get('last_name')
+        user.email = request.params.get('email')
+        user.phone = request.params.get('phone')
+        user.default_medium = request.params.get('default_medium')
+        user.timezone = request.params.get('timezone')
+        USERS[user.username] = user
+        return HTTPFound(request.route_url('list'))
+    else:
+        return {'user': user}
 
 
 conn_err_msg = """\
