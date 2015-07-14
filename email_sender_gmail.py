@@ -1,18 +1,20 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.MIMEImage import MIMEImage
 
 
-def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
+def send(fromaddr, toaddrs, subject='no subject', text='', html=None, attachment=None):
     msg = MIMEMultipart('mixed')
+    msg.set_charset("utf-8")
     msg['Subject'] = subject
     msg['From'] = fromaddr
     msg['To'] = toaddrs
 
-    if img is not None:
-        fp = open(img, 'rb')
+    if attachment is not None:
+        fp = open(attachment, 'rb')
         part3 = MIMEImage(fp.read())
         fp.close()
         msg.attach(part3)
@@ -25,8 +27,8 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
     msg.attach(part1)
     msg.attach(part2)
 
-    username = 'scatterpeas@gmail.com'
-    password = 'peapassword'
+    username = ''
+    password = ''
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
     server.login(username, password)
@@ -34,8 +36,8 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
     server.quit()
 
 if __name__ == '__main__':
-    fromaddr = 'scatterpeas@gmail.com'
-    toaddrs = 'saki.fu86@gmail.com'
+    fromaddr = ''
+    toaddrs = ''
     subject = 'Greeting'
     text = "This is text \n Hi!\nHow are you?\nI'm a scattered pea.\nhttps://www.youtube.com/watch?v=jHm0jmg-sbc"
     html = """
@@ -50,6 +52,6 @@ if __name__ == '__main__':
       </body>
     </html>
      """
-    img = 'nmr.jpg'
-    send(fromaddr, toaddrs, subject, text, html, img)
+    attachment = 'nmr.jpg'
+    send(fromaddr, toaddrs, subject, text, html, attachment)
 
