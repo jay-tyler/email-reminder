@@ -1,6 +1,6 @@
 {% extends "base.jinja2" %}
 {% block body %}
-<form action="{{ request.route_url('edit_user') }}" method="POST" class="add_entry">
+<form action="{{ request.route_url('edit_user', username=user.username) }}" method="POST" class="add_entry">
     <div class="field">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" value="{{ user.password }}"/>
@@ -33,7 +33,4 @@
         <input id="EUButton" type="submit" value="Submit" name="submit"/>
     </div>
 </form>
-<script type="text/javascript">
-$("#datetimepicker").datetimepicker();
-</script>
 {% endblock %}

@@ -27,7 +27,7 @@ def main(global_config, **settings):
             callback=groupfinder,
         ),
         authorization_policy=ACLAuthorizationPolicy(),
-        # root_factory=RootFactory
+        root_factory=RootFactory
     )
     config.add_static_view('static', 'static')
     config.add_route('home', '/')
@@ -39,5 +39,6 @@ def main(global_config, **settings):
     config.add_route('edit_reminder', 'editreminder/{title}', factory=ReminderFactory, traverse='/{title}')
     config.add_route('create_user', '/createuser')
     config.add_route('detail_user', '/detailuser/{username}', factory=UserFactory, traverse='/{username}')
+    config.add_route('edit_user', '/edituser/{username}', factory=UserFactory, traverse='/{username}')
     config.scan()
     return config.make_wsgi_app()

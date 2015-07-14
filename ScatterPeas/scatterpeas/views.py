@@ -45,7 +45,7 @@ class Reminder(object):
     def __acl__(self):
         return [
             (Allow, self.owner, 'edit'),
-            (Allow, 'group:admin', 'edit'),
+            (Allow, 'group:admin', ALL_PERMISSIONS)
         ]
 
     def __init__(self, owner, title, payload, delivery_time):
@@ -66,7 +66,8 @@ REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
 
 class RootFactory(object):
     __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS)
+        (Allow, 'group:admin', ALL_PERMISSIONS),
+        (Allow, Authenticated, 'create')
     ]
 
     def __init__(self, request):
@@ -76,7 +77,6 @@ class RootFactory(object):
 class ReminderFactory(object):
     __acl__ = [
         (Allow, 'group:admin', ALL_PERMISSIONS),
-        (Allow, Authenticated, 'create')
     ]
 
     def __init__(self, request):
