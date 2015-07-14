@@ -24,6 +24,7 @@ from sqlalchemy.orm import (
     backref
     )
 
+from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
 
 DATABASE_URL = os.environ.get(
@@ -55,6 +56,30 @@ class User(Base):
     #     order_by='Reminder.id',
     #     backref='users'
     # )
+
+    @classmethod
+    def create_user(cls, username, password, first=None, last=None,
+                    dflt_medium=None, timezone=None, session=None):
+        if session is None:
+            session = DBSession
+        manager = BCRYPTPasswordManager()
+        hashed = manager.encode(password)
+        instance = cls(first=first, last=last, username=username, password=hashed, dflt_medium=dflt_medium, timezone=timezone)
+        session.add(instance)
+        return instance
+
+    @classmethod
+    def check_password(cls, username, password):
+        manager = BCRYPTPasswordManager()
+        user = User.by_username(username)
+        return manager.check(user.password, password)
+
+
+    @classmethod
+    def by_username(cls, username, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(cls).filter(User.username == username).one()
 
     def __repr__(self):
         return "<User(first='%s', last='%s', username='%s', dflt_medium='%s')>" % (self.first, self.last, self.username, self.dflt_medium)
@@ -92,6 +117,7 @@ class UUID(Base):
 
     def __repr__(self):
         return "<UUID(uuid='%s', medium='%s', created='%s', alias_id='%s')>" %  (self.uuid, self.medium, self.created, self.alias_id)
+
 
 
 if __name__ == '__main__':
