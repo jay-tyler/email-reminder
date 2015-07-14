@@ -92,6 +92,9 @@ class UserFactory(object):
         (Allow, 'group:admin', ALL_PERMISSIONS)
     ]
 
+    def __init__(self, request):
+        self.request = request
+
     def __getitem__(self, username):
         return USERS[username]
 
@@ -137,7 +140,7 @@ def login(request):
 
         if authenticated:
             headers = remember(request, username)
-            return HTTPFound(request.route_url('home'), headers=headers)
+            return HTTPFound(request.route_url('list'), headers=headers)
 
     return {'error': error, 'username': username}
 
@@ -207,8 +210,16 @@ def create_user(request):
         user = User(username, password, first_name, last_name, email,
                     phone, default_medium, timezone)
         USERS[username] = user
+        print USERS
+        return HTTPFound(request.route_url('list'))
     else:
         return {}
+
+
+@view_config(route_name='detail_user', renderer='templates/detail_user.jinja2', permission='edit')
+def detail_user(request):
+    user = request.context
+    return {'user': user}
 
 
 conn_err_msg = """\
