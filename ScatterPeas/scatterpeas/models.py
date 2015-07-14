@@ -109,6 +109,14 @@ class Alias(Base):
     #     backref='aliases'
     # )
 
+    @classmethod
+    def create_alias(cls, user_id, contact_info, alias=None, medium=None, activation_state=None, session=None):
+        if session is None:
+            session = DBSession
+        instance = cls(alias=alias, user_id=user_id, contact_info=contact_info, medium=medium, activation_state=activation_state)
+        session.add(instance)
+        return instance
+
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', user_id='%s')>" % (self.alias, self.contact_info, self.activation_state, self.user_id)
 
