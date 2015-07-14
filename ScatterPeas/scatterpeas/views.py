@@ -53,11 +53,13 @@ USERS['user1'] = User('user1', 'password')
 USERS['user2'] = User('user2', 'password')
 USERS['admin'] = User('admin', 'password', ['admin'])
 REMINDERS['myreminder'] = Reminder('user1', 'myreminder', 'take out the garbage', 'a time')
+REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
 
 
 class RootFactory(object):
     __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS)
+        (Allow, 'group:admin', ALL_PERMISSIONS),
+        (Allow, Authenticated, 'create')
     ]
 
     def __init__(self, request):
@@ -66,6 +68,7 @@ class RootFactory(object):
 
 class ReminderFactory(object):
     __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS),
         (Allow, Authenticated, 'create')
     ]
 
@@ -137,66 +140,49 @@ def logout(request):
     return HTTPFound(request.route_url('home'), headers=headers)
 
 
-@view_config(route_name='list', renderer='list.jinja2')
+@view_config(route_name='list', renderer='templates/list.jinja2')
 def list_reminders(request):
-    if request.authenticated_userid:
-        reminders = Reminder.search(request.authenticated_userid).all()
-        return {'reminders': reminders}
-    else:
+    if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
+    reminders = []
+    for reminder in REMINDERS:
+        if REMINDERS[reminder].owner == request.authenticated_userid:
+            reminders.append(REMINDERS[reminder])
+    return {'reminders': reminders}
 
 
 @view_config(route_name='detail_reminder', renderer='templates/detail_reminder.jinja2', permission='edit')
 def view_one_reminder(request):
-    if not request.authenticated_userid:
-        return HTTPFound(request.route_url('login'))
     reminder = request.context
     return {'reminder': reminder}
-    # reminder_id = request.matchdict.get('id', None)
-    # try:
-    #     reminder = Reminder.search(reminder_id).one()
-    # except NoResultFound:
-    #     return HTTPNotFound('There is no reminder with this id.')
-    # if request.authenticated_userid == reminder.owner:
-    #     return {'reminder': reminder}
-    # else:
-    #     return HTTPForbidden()
 
 
-# @view_config(route_name='create_reminder', renderer='create_reminder.jinja2')
-# def create_reminder(request):
-#     if not request.authenticated_userid:
-#         return HTTPFound(request.route_url('login'))
-#     if request.method == 'POST':
-#         owner = request.authenticated_userid
-#         title = request.params.get('title')
-#         payload = request.params.get('payload')
-#         delivery_time = request.params.get('delivery_time')
-#         Reminder.write(owner=owner,
-#                        title=title,
-#                        payload=payload,
-#                        delivery_time=delivery_time)
-#         return HTTPFound(request.route_url('list'))
-#     else:
-#         return {}
+@view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
+def create_reminder(request):
+    if request.method == 'POST':
+        owner = request.authenticated_userid
+        title = request.params.get('title')
+        payload = request.params.get('payload')
+        delivery_time = request.params.get('delivery_time')
+        REMINDERS[title] = Reminder(owner, title, payload, delivery_time)
+        return HTTPFound(request.route_url('list'))
+    else:
+        return {}
 
 
-# @view_config(route_name='edit_reminder', renderer='edit_reminder.jinja2')
-# def edit_reminder(request):
-#     if not request.authenticated_userid:
-#         return HTTPFound(request.route_url('login'))
-#     reminder_id = request.matchdict.get('id', None)
-#     reminder = Reminder.search(reminder_id).one()
-#     if reminder.owner != request.authenticated_userid:
-#         return HTTPForbidden()
-#     if request.method == 'POST':
-#         reminder.owner = request.authenticated_userid
-#         reminder.title = request.params.get('title')
-#         reminder.payload = request.params.get('payload')
-#         reminder.delivery_time = request.params.get('delivery_time')
-#         return HTTPFound(request.route_url('list'))
-#     else:
-#         return {'reminder': reminder}
+@view_config(route_name='edit_reminder', renderer='templates/edit_reminder.jinja2', permission='edit')
+def edit_reminder(request):
+    reminder = request.context
+    if request.method == 'POST':
+        del REMINDERS[reminder.title]
+        reminder.owner = request.authenticated_userid
+        reminder.title = request.params.get('title')
+        reminder.payload = request.params.get('payload')
+        reminder.delivery_time = request.params.get('delivery_time')
+        REMINDERS[reminder.title] = reminder
+        return HTTPFound(request.route_url('list'))
+    else:
+        return {'reminder': reminder}
 
 
 conn_err_msg = """\

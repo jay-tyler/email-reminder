@@ -3,7 +3,7 @@ from sqlalchemy import engine_from_config
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 import os
-from views import ReminderFactory, groupfinder
+from views import ReminderFactory, groupfinder, RootFactory
 
 from .models import (
     DBSession,
@@ -27,15 +27,15 @@ def main(global_config, **settings):
             callback=groupfinder,
         ),
         authorization_policy=ACLAuthorizationPolicy(),
-        # root_factory='RootFactory'
+        root_factory=RootFactory
     )
     config.add_static_view('static', 'static')
     config.add_route('home', '/')
     config.add_route('login', '/login')
     config.add_route('logout', '/logout')
-    config.add_route('list', '/list/')
+    config.add_route('list', '/list')
     config.add_route('detail_reminder', 'detailreminder/{title}', factory=ReminderFactory, traverse='/{title}')
     config.add_route('create_reminder', '/createreminder')
-    config.add_route('edit_reminder', 'editreminder/{id}')
+    config.add_route('edit_reminder', 'editreminder/{title}', factory=ReminderFactory, traverse='/{title}')
     config.scan()
     return config.make_wsgi_app()
