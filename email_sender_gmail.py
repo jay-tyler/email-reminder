@@ -27,8 +27,8 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, attachment
     msg.attach(part1)
     msg.attach(part2)
 
-    username = ''
-    password = ''
+    username = 'scatterpeas'
+    password = 'peapassword'
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
     server.login(username, password)
@@ -36,8 +36,8 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, attachment
     server.quit()
 
 if __name__ == '__main__':
-    fromaddr = ''
-    toaddrs = ''
+    fromaddr = 'scatterpeas@gmail.com'
+    toaddrs = 'scatterpeas@gmail.com'
     subject = 'Greeting'
     text = "This is text \n Hi!\nHow are you?\nI'm a scattered pea.\nhttps://www.youtube.com/watch?v=jHm0jmg-sbc"
     html = """
@@ -52,6 +52,6 @@ if __name__ == '__main__':
       </body>
     </html>
      """
-    attachment = 'nmr.jpg'
-    send(fromaddr, toaddrs, subject, text, html, attachment)
+    # attachment = 'nmr.jpg'
+    send(fromaddr, toaddrs, subject, text, html)
 
