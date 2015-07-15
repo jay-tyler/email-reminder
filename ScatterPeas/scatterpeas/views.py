@@ -184,7 +184,6 @@ def create_reminder(request):
 def edit_reminder(request):
     reminder = request.context
     if request.method == 'POST':
-        del REMINDERS[reminder.title]
         reminder.owner = request.authenticated_userid
         reminder.title = request.params.get('title')
         reminder.payload = request.params.get('payload')
@@ -225,7 +224,6 @@ def detail_user(request):
 def edit_user(request):
     user = request.context
     if request.method == 'POST':
-        del REMINDERS[user.username]
         user.username = request.authenticated_userid
         user.password = request.params.get('password')
         user.first_name = request.params.get('first_name')
