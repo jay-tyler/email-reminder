@@ -265,6 +265,7 @@ class UUID(Base):
         # this is not working! something about uuid return object
         if session is None:
             session = DBSession
+        UUID._update_state(uuid)
         uuid = UUID.by_uuid(uuid)
         return (uuid.alias_id, uuid.confirmation_state)
 
@@ -281,6 +282,16 @@ class UUID(Base):
             session = DBSession
         uuid = session.query(cls).filter(UUID.uuid == uuid).one()
         return uuid
+
+    @classmethod
+    def _update_state(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = UUID.by_uuid(uuid)
+        if uuid.confirmation_state != 2:
+            eol = uuid.created + datetime.timedelta(days=1)
+            if eol < datetime.datetime.utcnow():
+                uuid.confirmation_state = -1
 
     def __repr__(self):
         return "<UUID(uuid='%s', email_state='%s', created='%s', \
