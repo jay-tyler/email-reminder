@@ -64,7 +64,25 @@ class Reminder(Base):
 
     @classmethod
     def parse_reminder(cls, reminder_id, session=None):
+        if session is None:
+            session = DBSession
         next_job = cls.get_next_job(reminder_id)
+        reminder = cls.retrieve_instance(reminder_id)
+        if next_job is None:
+            reminder.rstate = False
+        else:
+            Job.create_job(reminder_id, next_job)
+        return {"title": reminder.title,
+                "text_payload": reminder.text_payload,
+                "media_payload": reminder.media_payload,
+                "alias_id": reminder.alias_id}
+
+
+    @classmethod
+    def retrieve_instance(cls, reminder_id, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(Reminder).filter(Reminder.id == reminder_id).one()
 
 
     @classmethod
@@ -260,6 +278,20 @@ class Job(Base):
     # execution time in UTC
     execution_time = Column(DateTime(timezone=True))
 
+    @classmethod
+    def create_job(cls, reminder_id, execution_time, session=None):
+        if session is None:
+            session = DBSession
+        instance = cls(reminder_id=reminder_id, execution_time=execution_time,
+                       job_state=0)
+        session.add(instance)
+        return instance
+
+    @classmethod
+    def retrieve_instance(cls, job_id, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(Job).filter(Job.id == job_id).one()
 
 def init_db():
     engine = sa.create_engine(DATABASE_URL, echo=False)
