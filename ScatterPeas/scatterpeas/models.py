@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import uuid
 import datetime
@@ -33,8 +34,11 @@ DATABASE_URL = os.environ.get(
     'postgresql:///scatterpeas2'
 )
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
+engine = create_engine(DATABASE_URL, echo=True)
+Session = sessionmaker(bind=engine)
+DBSession = Session()
 # engine = create_engine(DATABASE_URL, echo=True)
 # Base.metadata.create_all(engine)
 # Session = sessionmaker(bind=engine)
@@ -194,6 +198,13 @@ class Alias(Base):
         session.add(instance)
         return instance
 
+    @classmethod
+    def activate(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        alias = session.query(cls).filter(Alias.id == alias_id).one()
+        alias.activation_state = 1
+
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', \
                 user_id='%s')>" % (
@@ -215,7 +226,7 @@ class UUID(Base):
     """
     __tablename__ = 'uuids'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(Unicode(36), nullable=False, default=uuid.uuid4)
+    uuid = Column(Unicode(36), nullable=False, default=str(uuid.uuid4()))
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
     confirmation_state = Column(Integer, default=0, nullable=False)
     created = Column(
@@ -254,13 +265,19 @@ class UUID(Base):
         # this is not working! something about uuid return object
         if session is None:
             session = DBSession
-        uuid = session.query(cls).filter(cls.uuid == uuid).one()
+        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
         return (uuid.alias_id, uuid.confirmation_state)
 
     def __repr__(self):
         return "<UUID(uuid='%s', email_state='%s', created='%s', \
                 alias_id='%s')>" % (self.uuid, self.confirmation_state,
                                     self.created, self.alias_id)
+
+
+def init_db():
+    engine = create_engine(DATABASE_URL, echo=True)
+    Base.metadata.create_all(engine)
+
 
 
 # class Jobs(Base):
@@ -279,7 +296,5 @@ class UUID(Base):
 #     biz = m.User.create_user(first='biz', last='baz', username='bizbaz', password='1qaz')
 #     engine = create_engine(DATABASE_URL, echo=True)
 #     Base.metadata.create_all(engine)
-#     DBSession.configure(bind=engine)
-
-# bizmarkie = m.Alias.create_alias(11, contact_info='biz@gmail.com')
-# buuid = m.UUID.create_uuid(9)
+#     Session = sessionmaker(bind=engine)
+#     Session.configure(bind=engine)
