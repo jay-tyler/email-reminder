@@ -226,7 +226,7 @@ class UUID(Base):
     """
     __tablename__ = 'uuids'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(Unicode(36), nullable=False, default=str(uuid.uuid4()))
+    uuid = Column(String(36), nullable=False, default=str(uuid.uuid4()))
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
     confirmation_state = Column(Integer, default=0, nullable=False)
     created = Column(
@@ -265,8 +265,22 @@ class UUID(Base):
         # this is not working! something about uuid return object
         if session is None:
             session = DBSession
-        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
+        uuid = UUID.by_uuid(uuid)
         return (uuid.alias_id, uuid.confirmation_state)
+
+    @classmethod
+    def success(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = UUID.by_uuid(uuid)
+        uuid.confirmation_state = 2
+
+    @classmethod
+    def by_uuid(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
+        return uuid
 
     def __repr__(self):
         return "<UUID(uuid='%s', email_state='%s', created='%s', \
