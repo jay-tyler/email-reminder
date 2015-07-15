@@ -208,10 +208,24 @@ def create_user(request):
         user = User(username, password, first_name, last_name, email,
                     phone, default_medium, timezone)
         USERS[username] = user
-        print USERS
-        return HTTPFound(request.route_url('list'))
+        # call the send confirmation email function
+        return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}
+
+
+@view_config(route_name='wait_for_confirmation', renderer='templates/wait_for_confirmation.jinja2')
+def wait_for_confirmation(request):
+    return {}
+
+
+@view_config(route_name='check_confirmation', renderer='templates/check_confirmation.jinja2')
+def check_confirmation(request):
+    uuid = request.matchdict.get('uuid')
+    # query the uuid table for the associated user
+    # set the user status to activated
+    # send success or error message to the template
+    pass
 
 
 @view_config(route_name='detail_user', renderer='templates/detail_user.jinja2', permission='edit')
@@ -236,6 +250,13 @@ def edit_user(request):
         return HTTPFound(request.route_url('list'))
     else:
         return {'user': user}
+
+
+@view_config(route_name='send_scheduled_mail')
+def send_scheduled_mail(request):
+    # query the database for scheduled jobs < cronjob interval
+    # call the send reminder email function for each job
+    pass
 
 
 conn_err_msg = """\
