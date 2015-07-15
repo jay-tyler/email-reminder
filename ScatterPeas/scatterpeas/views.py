@@ -11,7 +11,9 @@ from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 
 from .models import (
     DBSession,
-    MyModel,
+    User,
+    Alias,
+    UUID,
     )
 
 
@@ -207,10 +209,25 @@ def create_user(request):
         last_name = request.params.get('last_name')
         email = request.params.get('email')
         phone = request.params.get('phone')
-        default_medium = request.params.get('default_medium')
+        default_medium = request.params.get('default_medium').lower()
         timezone = request.params.get('timezone')
-        user = User(username, password, first_name, last_name, email,
-                    phone, default_medium, timezone)
+        user = User.create_user(username=username, password=password,
+            first=first_name, last=last_name, dflt_medium=default_medium,
+            timezone=timezone
+        )
+        alias = None
+        if default_medium == 'email':
+            alias = Alias.create_alias(user_id=user.id, contact_info=email,
+                medium=1
+            )
+        elif default_medium == 'text':
+            alias = Alias.create_alias(user_id=user.id, contact_info=phone,
+                medium=2)
+        else:
+            raise ValueError('You must enter "email" or "text".')
+        uuid = UUID.
+        # user = User(username, password, first_name, last_name, email,
+        #             phone, default_medium, timezone)
         USERS[username] = user
         # call the send confirmation email function
         return HTTPFound(request.route_url('wait_for_confirmation'))
@@ -223,8 +240,8 @@ def wait_for_confirmation(request):
     return {}
 
 
-@view_config(route_name='check_confirmation', renderer='templates/check_confirmation.jinja2')
-def check_confirmation(request):
+@view_config(route_name='confirm_user', renderer='templates/confirm_user.jinja2')
+def confirm_user(request):
     uuid = request.matchdict.get('uuid')
     # query the uuid table for the associated user
     # set the user status to activated
@@ -248,7 +265,7 @@ def edit_user(request):
         user.last_name = request.params.get('last_name')
         user.email = request.params.get('email')
         user.phone = request.params.get('phone')
-        user.default_medium = request.params.get('default_medium')
+        user.default_medium = request.params.get('default_medium').lower()
         user.timezone = request.params.get('timezone')
         USERS[user.username] = user
         return HTTPFound(request.route_url('list'))

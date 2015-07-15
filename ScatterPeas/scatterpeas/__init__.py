@@ -41,6 +41,6 @@ def main(global_config, **settings):
     config.add_route('detail_user', '/detailuser/{username}', factory=UserFactory, traverse='/{username}')
     config.add_route('edit_user', '/edituser/{username}', factory=UserFactory, traverse='/{username}')
     config.add_route('wait_for_confirmation', '/waitforconfirmation')
-    config.add_route('check_confirmation', '/checkconfirmation/{uuid}')
+    config.add_route('confirm_user', '/confirm/{uuid}')
     config.scan()
     return config.make_wsgi_app()
