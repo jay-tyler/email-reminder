@@ -48,11 +48,15 @@ class Reminder(object):
             (Allow, 'group:admin', ALL_PERMISSIONS)
         ]
 
-    def __init__(self, owner, title, payload, delivery_time):
+    def __init__(self, owner, title, payload, delivery_time, method='email',
+                 email=None, phone=None):
         self.owner = owner
         self.title = title
         self.payload = payload
         self.delivery_time = delivery_time
+        self.method = method
+        self.email = email
+        self.phone = phone
 
 
 USERS = {}
@@ -255,7 +259,19 @@ def edit_user(request):
 @view_config(route_name='send_scheduled_mail')
 def send_scheduled_mail(request):
     # query the database for scheduled jobs < cronjob interval
-    # call the send reminder email function for each job
+    for reminder in reminders:
+        if reminder.method == 'email':
+            send(our_email, reminder.email, reminder.title, reminder.payload)
+        else:
+            send_sms(reminder.title, reminder.phone, our_phone_number)
+    pass
+
+
+@view_config(route_name='fetch_emails')
+def fetch_emails(request):
+    raw_email = receive()
+    # break up email into components
+    # create Reminder and write to database
     pass
 
 
