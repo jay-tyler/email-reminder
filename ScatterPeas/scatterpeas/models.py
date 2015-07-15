@@ -32,14 +32,13 @@ from zope.sqlalchemy import ZopeTransactionExtension
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql:///scatterpeas2'
+    'postgresql://jason@localhost:5432/scatterpeas2'
 )
 
 # DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=True)
 Session = sessionmaker(bind=engine)
-Base.metadata.create_all(engine)
 DBSession = Session()
 
 
@@ -59,7 +58,6 @@ class Reminder(Base):
     # turned to False after execution of last job
     rstate = Column(Boolean)
     # # next_event = Column(DateTime(timezone=True))
-    rrules = relationship("RRule", uselist=False, backref="reminders")
 
     @classmethod
     def create(cls, alias_id=0, title="", text_payload="", media_payload="",
@@ -112,16 +110,10 @@ class User(Base):
         nullable=False
     )
 
-    aliases = relationship('Alias', order_by='Alias.id', backref=backref('users', order_by=id))
-    # reminders = relationship(
-    #     'Reminder',
-    #     order_by='Reminder.id',
-    #     backref='users'
-    # )
 
     @classmethod
     def create_user(cls, username, password, first="", last="",
-                    dflt_medium="", timezone='Americas\Los_Angeles', session=None):
+                    dflt_medium='email', timezone='Americas\Los_Angeles', session=None):
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
@@ -165,13 +157,6 @@ class Alias(Base):
     contact_info = Column(Unicode(75), nullable=False)
     medium = Column(Integer, default=1)
     activation_state = Column(Integer, default=0)
-
-    uuids = relationship('UUID', order_by='UUID.id', backref=backref('aliases', order_by=id))
-    # reminders = relationship(
-    #     'Reminder',
-    #     order_by='Reminder.id',
-    #     backref='aliases'
-    # )
 
     @classmethod
     def create_alias(cls, user_id, contact_info, alias=None, medium=None, activation_state=None, session=None):
@@ -218,7 +203,7 @@ class UUID(Base):
         return instance
 
     def __repr__(self):
-        return "<UUID(uuid='%s', email_state='%s', created='%s', alias_id='%s')>" %  (self.uuid, self.confirmation_state, self.created, self.alias_id)
+        return "<UUID(uuid='%s', email_state='%s', created='%s', alias_id='%s')>" % (self.uuid, self.confirmation_state, self.created, self.alias_id)
 
 
 class Job(Base):
@@ -230,3 +215,15 @@ class Job(Base):
     job_state = Column(Integer)
     # execution time in UTC
     execution_time = Column(DateTime)
+
+def init_db():
+    engine = sa.create_engine(DATABASE_URL, echo=False)
+    Base.metadata.create_all(engine)
+
+
+def helper():
+    global user1
+    user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
+    global user2
+    user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
+    return
