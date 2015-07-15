@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 import os
 import uuid
 import datetime
+from dateutil.rrule import rrule
 import sqlalchemy as sa
 from sqlalchemy import (
     Column,
@@ -29,6 +30,9 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
+from datetime import datetime
+from pytz import timezone
+import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
@@ -49,7 +53,7 @@ class Reminder(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
     # keeps the rrule currently generating jobs
-    rrule_id = Column(Integer, ForeignKey('rrules.id'), nullable=False)
+    rrule_id = Column(Integer, ForeignKey('rrules.id'))
     title = Column(Unicode(256), nullable=False)
     text_payload = Column(Unicode(20000))
     # this might end up just being a link to a static resourc; we will see
@@ -57,11 +61,34 @@ class Reminder(Base):
     # rstate is used to to track whether a reminder is still producing jobs
     # turned to False after execution of last job
     rstate = Column(Boolean)
-    # # next_event = Column(DateTime(timezone=True))
 
     @classmethod
-    def create(cls, alias_id=0, title="", text_payload="", media_payload="",
-               rstate=True, session=None):
+    def parse_reminder(cls, reminder_id, session=None):
+        next_job = cls.get_next_job(reminder_id)
+
+
+    @classmethod
+    def get_next_job(cls, reminder_id, session=None):
+        """Takes a reminder_id to retrieve current rrule set and generate
+        the next job in datetime format for utc. Returns None if there is
+        no next job."""
+        if session is None:
+            session = DBSession
+        rrule_id = session.query(cls).filter(
+                    cls.id == reminder_id).one().rrule_id
+        dtstart = RRule.get_rrules(rrule_id)
+        rrule_gen = rrule(0, dtstart=dtstart, count=1)
+        now = datetime.utcnow().replace(tzinfo=pytz.utc)
+        next_job = rrule_gen.after(now)
+        if next_job is None:
+            return None
+        else:
+            return next_job.astimezone(pytz.utc)
+
+    @classmethod
+    def create_reminder(cls, alias_id=0, title="",
+                        text_payload="", media_payload="",
+                        rstate=True, session=None):
         if session is None:
             session = DBSession
         if title != "" and alias_id != 0:
@@ -70,7 +97,7 @@ class Reminder(Base):
             function's responsibility to provide
             these.
             '''
-            instance = cls(title=title,
+            instance = cls(title=title, alias_id=alias_id,
                            text_payload=text_payload,
                            media_payload=media_payload, rstate=rstate)
             session.add(instance)
@@ -85,13 +112,24 @@ class RRule(Base):
     # constrain this to primary key of reminders
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
+    dtstart = Column(DateTime(timezone=True))
 
     @classmethod
-    def create(cls, reminder_id=0, session=None):
+    def get_rrules(cls, rrule_id, session=None):
+        if session is None:
+            session = DBSession
+        # Passes back just dtstart for now; future implementations should
+        # probably use a dictionary
+        return session.query(RRule).filter(RRule.id == rrule_id).one().dtstart
+
+    @classmethod
+    def create_rrule(cls, reminder_id=0,
+                     dtstart=datetime.utcnow().replace(tzinfo=pytz.utc),
+                     session=None):
         if session is None:
             session = DBSession
         if reminder_id != 0:
-            instance = cls(reminder_id=reminder_id)
+            instance = cls(reminder_id=reminder_id, dtstart=dtstart)
             session.add(instance)
             return instance
 
@@ -103,22 +141,25 @@ class User(Base):
     last = Column(Unicode(50))
     username = Column(Unicode(50), nullable=False)
     password = Column(Unicode(60), nullable=False)
-    dflt_medium = Column(Unicode(5), default=u'email', nullable=False)
+    # Medium state is 1 for email, 2 for text
+    dflt_medium = Column(Integer, default=1, nullable=False)
     timezone = Column(
         Unicode(50),
         default='America/Los_Angeles',
         nullable=False
     )
 
-
     @classmethod
     def create_user(cls, username, password, first="", last="",
-                    dflt_medium='email', timezone='Americas\Los_Angeles', session=None):
+                    dflt_medium=1, timezone='Americas\Los_Angeles',
+                    session=None):
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
         hashed = manager.encode(password)
-        instance = cls(first=first, last=last, username=username, password=hashed, dflt_medium=dflt_medium, timezone=timezone)
+        instance = cls(first=first, last=last, username=username,
+                       password=hashed, dflt_medium=dflt_medium,
+                       timezone=timezone)
         session.add(instance)
         return instance
 
@@ -155,14 +196,17 @@ class Alias(Base):
     alias = Column(Unicode(100), default=u'ME', nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     contact_info = Column(Unicode(75), nullable=False)
+    # Medium state is 1 for email, 2 for text
     medium = Column(Integer, default=1)
     activation_state = Column(Integer, default=0)
 
     @classmethod
-    def create_alias(cls, user_id, contact_info, alias=None, medium=None, activation_state=None, session=None):
+    def create_alias(cls, user_id, contact_info, alias=None, medium=None,
+                     activation_state=None, session=None):
         if session is None:
             session = DBSession
-        instance = cls(alias=alias, user_id=user_id, contact_info=contact_info, medium=medium, activation_state=activation_state)
+        instance = cls(alias=alias, user_id=user_id, contact_info=contact_info,
+                       medium=medium, activation_state=activation_state)
         session.add(instance)
         return instance
 
@@ -189,7 +233,7 @@ class UUID(Base):
     confirmation_state = Column(Integer, default=0, nullable=False)
     created = Column(
         DateTime,
-        default=datetime.datetime.utcnow,
+        default=datetime.utcnow(),
         nullable=False)
 
     @classmethod
@@ -214,7 +258,8 @@ class Job(Base):
     # excecution, 3 for cancelled
     job_state = Column(Integer)
     # execution time in UTC
-    execution_time = Column(DateTime)
+    execution_time = Column(DateTime(timezone=True))
+
 
 def init_db():
     engine = sa.create_engine(DATABASE_URL, echo=False)
@@ -222,8 +267,17 @@ def init_db():
 
 
 def helper():
-    global user1
     user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
-    global user2
     user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
+    DBSession.commit()
+    alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
+    alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
+    DBSession.commit()
+    reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
+    DBSession.commit()
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
+    DBSession.commit()
+    rrule_id = rrule1.id
+    reminder1.rrule_id = rrule_id
+    DBSession.commit()
     return
