@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 import uuid
 import datetime
@@ -34,14 +35,15 @@ DATABASE_URL = os.environ.get(
     'postgresql:///scatterpeas2'
 )
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=True)
-Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
+Base.metadata.create_all(engine)
+DBSession = Session()
 
 
-class Reminders(Base):
+class Reminder(Base):
 
     __tablename__ = 'reminders'
 
@@ -55,18 +57,18 @@ class Reminders(Base):
     media_payload = Column(Unicode(256))
     # rstate is used to to track whether a reminder is still producing jobs
     # turned to False after execution of last job
-    rstate = Column(Integer)
-    # next_event = Column(DateTime(timezone=True))
-    child = relationship("", backref=backref("reminders", uselist=False))
+    rstate = Column(Boolean)
+    # # next_event = Column(DateTime(timezone=True))
+    rrules = relationship("RRule", uselist=False, backref="reminders")
 
     @classmethod
-    def create(cls, title="", text_payload="", media_payload="",
-               rstate=True, session=None, user_id=0, alias_id=0):
+    def create(cls, alias_id=0, title="", text_payload="", media_payload="",
+               rstate=True, session=None):
         if session is None:
             session = DBSession
         if title != "" and alias_id != 0:
             '''Reminder instance is created, but may not potentially have
-            all necessary attributes including rrule_id. It is the parent 
+            all necessary attributes including rrule_id. It is the parent
             function's responsibility to provide
             these.
             '''
@@ -77,7 +79,7 @@ class Reminders(Base):
             return instance
 
 
-class RRules(Base):
+class RRule(Base):
     """Contains iCal specification rules corresponding to an event. This
     class is not yet fully implemented, but stands in for future
     expandability"""
@@ -95,6 +97,7 @@ class RRules(Base):
             session.add(instance)
             return instance
 
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -105,7 +108,7 @@ class User(Base):
     dflt_medium = Column(Unicode(5), default=u'email', nullable=False)
     timezone = Column(
         Unicode(50),
-        default=u'America/Los_Angeles',
+        default='America/Los_Angeles',
         nullable=False
     )
 
@@ -117,8 +120,8 @@ class User(Base):
     # )
 
     @classmethod
-    def create_user(cls, username, password, first=None, last=None,
-                    dflt_medium=None, timezone=None, session=None):
+    def create_user(cls, username, password, first="", last="",
+                    dflt_medium="", timezone='Americas\Los_Angeles', session=None):
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
@@ -218,7 +221,7 @@ class UUID(Base):
         return "<UUID(uuid='%s', email_state='%s', created='%s', alias_id='%s')>" %  (self.uuid, self.confirmation_state, self.created, self.alias_id)
 
 
-class Jobs(Base):
+class Job(Base):
     __tablename__ = 'jobs'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
