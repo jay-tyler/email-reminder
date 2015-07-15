@@ -101,7 +101,7 @@ class UserFactory(object):
         self.request = request
 
     def __getitem__(self, username):
-        return USERS[username]
+        return User.by_username(username)
 
 
 def groupfinder(userid, request):
@@ -111,18 +111,12 @@ def groupfinder(userid, request):
 
 
 def do_login(request):
-    # username = request.params.get('username', None)
-    # password = request.params.get('password', None)
-    # if not (username and password):
-    #     raise ValueError('both username and password are required')
+    username = request.params.get('username', None)
+    password = request.params.get('password', None)
+    if not (username and password):
+        raise ValueError('both username and password are required')
 
-    # settings = request.registry.settings
-    # manager = BCRYPTPasswordManager()
-    # if username == settings.get('auth.username', ''):
-    #     hashed = settings.get('auth.password', '')
-    #     return manager.check(hashed, password)
-    # return False
-    return True
+    return User.check_password(username, password)
 
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
@@ -264,16 +258,22 @@ def wait_for_confirmation(request):
 @view_config(route_name='confirm_user', renderer='templates/confirm_user.jinja2')
 def confirm_user(request):
     uuid = request.matchdict.get('uuid')
-
-    # query the uuid table for the associated user
-    # set the user status to activated
-    # send success or error message to the template
-    pass
+    alias_id, confirmation_state = UUID.get_alias(uuid)
+    if confirmation_state == 1:
+        Alias.activate(alias_id)
+        UUID.success(uuid)
+        message = "Success! You may now send reminders to this contact."
+    elif confirmation_state == 2:
+        message = "This address has already been confirmed."
+    elif confirmation_state == -1:
+        message = 'This confirmation link has expired.  Please try to confirm again.'
+    return {'message': message}
 
 
 @view_config(route_name='detail_user', renderer='templates/detail_user.jinja2', permission='edit')
 def detail_user(request):
     user = request.context
+    # get the aliases owned by the user
     return {'user': user}
 
 

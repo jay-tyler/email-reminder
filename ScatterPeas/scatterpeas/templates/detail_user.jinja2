@@ -7,4 +7,18 @@
 <p>{{ user.phone }}</p>
 <p>{{ user.default_medium }}</p>
 <p>{{ user.timezone }}</p>
+{% for alias in aliases %}
+    <p>alias.alias</p>
+    <p>alias.contact_info</p>
+    {% if alias.medium == 1 %}
+        <p>Medium: e-mail</p>
+    {% else %}
+        <p>Medium: text</p>
+    {% endif %}
+    {% if alias.activation_state == 2 %}
+        <p>Activated: Yes</p>
+    {% else %}
+        <p>Activated: No</p>
+    {% endif %}
+{% endfor %}
 {% endblock %}
