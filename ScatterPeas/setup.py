@@ -18,6 +18,7 @@ requires = [
     'zope.sqlalchemy',
     'waitress',
     'cryptacular',
+    'psycopg2'
     ]
 
 setup(name='ScatterPeas',
