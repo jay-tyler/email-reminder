@@ -1,0 +1,41 @@
+
+/* General -------------------- */
+
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    font-family: 'Raleway', sans-serif;
+}
+
+body {
+    color: black;
+    font-family: 'Raleway', sans-serif;
+    background-color: #2E8;
+}
+
+body {
+    background-color:#2E8;
+}
+.header {
+    background-color:#DED;
+    height:50px;
+}
+
+.menu-button {
+    background: #d9ff5b;
+}
+.pure-menu-heading img {
+    width:50px;
+}
+.title {
+    font-weight:lighter;
+}
+.intro, .signup {
+    padding: 15px;
+}
+.intro h1 {
+    text-align:center;
+    text-transform:uppercase;
+    color:#020;
+}
