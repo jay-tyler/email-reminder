@@ -3,7 +3,7 @@ from sqlalchemy import engine_from_config
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 import os
-from views import ReminderFactory, groupfinder, RootFactory, UserFactory
+from views import ReminderFactory, groupfinder, RootFactory, UserFactory, AliasFactory
 
 from .models import (
     DBSession,
@@ -42,5 +42,6 @@ def main(global_config, **settings):
     config.add_route('edit_user', '/edituser/{username}', factory=UserFactory, traverse='/{username}')
     config.add_route('wait_for_confirmation', '/waitforconfirmation')
     config.add_route('confirm_user', '/confirm/{uuid}')
+    config.add_route('detail_alias', '/detailalias/{id}', factory=AliasFactory, traverse='/{id}')
     config.scan()
     return config.make_wsgi_app()

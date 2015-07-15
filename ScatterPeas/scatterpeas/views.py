@@ -61,6 +61,16 @@ class Reminder(object):
         self.phone = phone
 
 
+class Alias(object):
+    @property
+    def __acl__(self):
+        rule_list = []
+        for user in self.users:
+            rule_list.append((Allow, user.username, 'edit'))
+        rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
+        return rule_list
+
+
 USERS = {}
 REMINDERS = {}
 USERS['user1'] = User('user1', 'password')
@@ -102,6 +112,18 @@ class UserFactory(object):
 
     def __getitem__(self, username):
         return User.by_username(username)
+
+
+class AliasFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS)
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem(self, id):
+        return Alias.by_id(id)
 
 
 def groupfinder(userid, request):
@@ -169,6 +191,8 @@ def view_one_reminder(request):
 
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
+    username = request.authenticated_userid
+    # query the database for aliases
     if request.method == 'POST':
         owner = request.authenticated_userid
         title = request.params.get('title')
@@ -177,7 +201,7 @@ def create_reminder(request):
         REMINDERS[title] = Reminder(owner, title, payload, delivery_time)
         return HTTPFound(request.route_url('list'))
     else:
-        return {}
+        return {'aliases': aliases}
 
 
 @view_config(route_name='edit_reminder', renderer='templates/edit_reminder.jinja2', permission='edit')
@@ -274,7 +298,7 @@ def confirm_user(request):
 def detail_user(request):
     user = request.context
     # get the aliases owned by the user
-    return {'user': user}
+    return {'user': user, 'aliases': aliases}
 
 
 @view_config(route_name='edit_user', renderer='templates/edit_user.jinja2', permission='edit')
@@ -282,17 +306,46 @@ def edit_user(request):
     user = request.context
     if request.method == 'POST':
         user.username = request.authenticated_userid
-        user.password = request.params.get('password')
+        password = request.params.get('password')
+        manager = BCRYPTPasswordManager()
+        hashed = manager.encode(password)
+        user.password = hashed
         user.first_name = request.params.get('first_name')
         user.last_name = request.params.get('last_name')
-        user.email = request.params.get('email')
-        user.phone = request.params.get('phone')
-        user.default_medium = request.params.get('default_medium').lower()
+        default_medium = request.params.get('default_medium').lower()
+        if default_medium == 'email':
+            user.dflt_medium = 1
+        if default_medium == 'text':
+            user.dflt_medium = 2
+        else:
+            raise ValueError()
         user.timezone = request.params.get('timezone')
-        USERS[user.username] = user
         return HTTPFound(request.route_url('list'))
     else:
         return {'user': user}
+
+
+@view_config(route_name='detail_alias', renderer='templates/detail_alias.jinja2', permission='edit')
+def detail_alias(request):
+    alias = request.context
+    return {'alias': alias}
+
+
+# @view_config(route_name='edit_alias', renderer='templates/edit_alias.jinja2', permission='edit')
+# def edit_alias(request):
+#     alias = request.context
+#     if request.method == 'POST':
+#         alias = request.params.get('alias')
+#         contact_info = request.params.get('contact_info')
+#         medium_text = request.params.get('medium')
+#         medium = None
+#         if medium_text == 'email':
+#             medium = 1
+#         if medium_text == 'text':
+#             medium = 2
+#         else:
+#             raise ValueError()
+#         activation_state = 0
 
 
 @view_config(route_name='send_scheduled_mail')
