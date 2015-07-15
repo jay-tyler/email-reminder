@@ -200,6 +200,17 @@ def edit_reminder(request):
         return {'reminder': reminder}
 
 
+def send_confirmation_email(uuid, contact_info):
+    title = "Your ScatterPeas confirmation link"
+    msg = """\
+Here's your confirmation link. Please click on it, or, if it's not \
+highlighted, copy and paste it into your browser.
+
+http://scatterpeas.com/confirm/{uuid}
+""".format(uuid=uuid)
+    send(our_email, contact_info, title, msg)
+
+
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
 def create_user(request):
     if request.method == 'POST':
@@ -225,11 +236,12 @@ def create_user(request):
                 medium=2)
         else:
             raise ValueError('You must enter "email" or "text".')
-        uuid = UUID.
+        uuid = UUID.create_uuid(alias_id=alias.id)
+        send_confirmation_email(uuid.uuid, alias.contact_info)
+        UUID.email_sent(alias.id)
         # user = User(username, password, first_name, last_name, email,
         #             phone, default_medium, timezone)
-        USERS[username] = user
-        # call the send confirmation email function
+        # USERS[username] = user
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}
@@ -243,6 +255,7 @@ def wait_for_confirmation(request):
 @view_config(route_name='confirm_user', renderer='templates/confirm_user.jinja2')
 def confirm_user(request):
     uuid = request.matchdict.get('uuid')
+
     # query the uuid table for the associated user
     # set the user status to activated
     # send success or error message to the template
