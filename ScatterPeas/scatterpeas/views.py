@@ -211,6 +211,11 @@ http://scatterpeas.com/confirm/{uuid}
     send(our_email, contact_info, title, msg)
 
 
+def send_confirmation_text(uuid, contact_info):
+    msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
+    send_sms(msg, contact_info, our_phone_number)
+
+
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
 def create_user(request):
     if request.method == 'POST':
@@ -227,17 +232,21 @@ def create_user(request):
             timezone=timezone
         )
         alias = None
+        uuid = None
         if default_medium == 'email':
             alias = Alias.create_alias(user_id=user.id, contact_info=email,
                 medium=1
             )
+            uuid = UUID.create_uuid(alias_id=alias.id)
+            send_confirmation_email(uuid.uuid, alias.contact_info)
         elif default_medium == 'text':
             alias = Alias.create_alias(user_id=user.id, contact_info=phone,
-                medium=2)
+                medium=2
+            )
+            uuid = UUID.create_uuid(alias_id=alias.id)
+            send_confirmation_text(uuid.uuid, alias.contact_info)
         else:
             raise ValueError('You must enter "email" or "text".')
-        uuid = UUID.create_uuid(alias_id=alias.id)
-        send_confirmation_email(uuid.uuid, alias.contact_info)
         UUID.email_sent(alias.id)
         # user = User(username, password, first_name, last_name, email,
         #             phone, default_medium, timezone)
