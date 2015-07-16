@@ -270,13 +270,13 @@ def create_user(request):
                 medium=1
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
-            send_confirmation_email(uuid.uuid, alias.contact_info)
+            # send_confirmation_email(uuid.uuid, alias.contact_info)
         elif default_medium == 'text':
             alias = Alias.create_alias(user_id=user.id, contact_info=phone,
                 medium=2
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
-            send_confirmation_text(uuid.uuid, alias.contact_info)
+            # send_confirmation_text(uuid.uuid, alias.contact_info)
         else:
             raise ValueError('You must enter "email" or "text".')
         UUID.email_sent(alias.id)
