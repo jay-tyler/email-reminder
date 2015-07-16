@@ -2,6 +2,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPForbidden
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 import os
 # from sqlalchemy.orm import scoped_session, sessoinmaker
 # from zope.sqlalchemy import ZopeTransactionExtension
@@ -11,6 +12,7 @@ from pyramid.security import remember, forget
 from dateutil import parser
 import pytz
 import scripts
+import datetime
 
 from .models import (
     DBSession,
@@ -187,10 +189,15 @@ def logout(request):
 def list_reminders(request):
     if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
+    try:
+        user = User.by_username(request.authenticated_userid)
+    except NoResultFound:
+        return HTTPFound(request.route_url('login'))
     reminders = []
-    for reminder in REMINDERS:
-        if REMINDERS[reminder].owner == request.authenticated_userid:
-            reminders.append(REMINDERS[reminder])
+    aliases = user.aliases
+    for alias in aliases:
+        for reminder in alias.reminders:
+            reminders.append(reminder)
     return {'reminders': reminders}
 
 
@@ -211,20 +218,28 @@ def convert_to_naive_utc(delivery_time):
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
     username = request.authenticated_userid
-    aliases = User.get_aliases(username)
     if request.method == 'POST':
         alias_id = request.params.get('alias_id')
         title = request.params.get('title')
         payload = request.params.get('payload')
+        delivery_time = request.params.get('delivery_time')
+        naive_dt = convert_to_naive_utc(delivery_time)
+        if naive_dt < datetime.datetime.utcnow():
+            raise ValueError('That reminder is in the past.')
         reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
         delivery_time = request.params.get('delivery_time')
         naive_dt = convert_to_naive_utc(delivery_time)
         rrule = RRule.create_rrule(reminder.id, naive_dt)
         reminder.rrule_id = rrule.id
-        Reminder.get_next_job(reminder.id)
+        Reminder.parse_reminder(reminder.id)
         return HTTPFound(request.route_url('list'))
     else:
+        all_aliases = User.get_aliases(username)
+        aliases = []
+        for alias in all_aliases:
+            if alias.activation_state == 1:
+                aliases.append(alias)
         return {'aliases': aliases}
 
 
@@ -253,13 +268,14 @@ http://scatterpeas.com/confirm/{uuid}
     scripts.gmail.send(our_email, contact_info, title, msg)
 
 
-# def send_confirmation_text(uuid, contact_info):
-#     msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
-#     send_sms(msg, contact_info, our_phone_number)
+def send_confirmation_text(uuid, contact_info):
+    msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
+    scripts.send_sms.send_sms(msg, '+1{}'.format(contact_info), '+16319564194')
 
 
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
 def create_user(request):
+    error = ''
     if request.method == 'POST':
         username = request.params.get('username')
         password = request.params.get('password')
@@ -267,11 +283,15 @@ def create_user(request):
         last_name = request.params.get('last_name')
         contact_info = request.params.get('contact_info')
         default_medium = int(request.params.get('default_medium'))
-        timezone = request.params.get('timezone')
-        user = User.create_user(username=username, password=password,
-            first=first_name, last=last_name, dflt_medium=default_medium,
-            timezone=timezone
-        )
+        timezone = 'US/Pacific'
+        try:
+            user = User.create_user(username=username, password=password,
+                first=first_name, last=last_name, dflt_medium=default_medium,
+                timezone=timezone
+            )
+        except IntegrityError:
+            error = "That username is taken."
+            return {'error': error}
         alias = None
         uuid = None
         if default_medium == 1:
@@ -285,11 +305,11 @@ def create_user(request):
                 contact_info=contact_info, medium=2
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
-            # send_confirmation_text(uuid.uuid, alias.contact_info)
+            send_confirmation_text(uuid.uuid, alias.contact_info)
         UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
-        return {}
+        return {'error': error}
 
 
 @view_config(route_name='wait_for_confirmation', renderer='templates/wait_for_confirmation.jinja2')
@@ -366,15 +386,30 @@ def detail_alias(request):
 #         activation_state = 0
 
 
-# @view_config(route_name='send_scheduled_mail')
-# def send_scheduled_mail(request):
-#     # query the database for scheduled jobs < cronjob interval
-#     for reminder in reminders:
-#         if reminder.method == 'email':
-#             send(our_email, reminder.email, reminder.title, reminder.payload)
-#         else:
-#             send_sms(reminder.title, reminder.phone, our_phone_number)
-#     pass
+@view_config(route_name='send_scheduled_mail', renderer='string')
+def send_scheduled_mail(request):
+    # query the database for scheduled jobs < cronjob interval
+    jobs = Job.todo(5)
+    message = "All jobs done.\n"
+    for job in jobs:
+        if job.job_state == 1:
+            continue
+        contact = job.reminder.alias.contact_info
+        title = job.reminder.title
+        payload = job.reminder.text_payload
+        if job.reminder.alias.medium == 1:
+            scripts.gmail.send(our_email, contact, title, payload)
+            job.job_state = 1
+            continue
+        else:
+            try:
+                scripts.send_sms.send_sms(title, '+1{}'.format(contact), '+16319564194')
+            except ValueError:
+                message += "Failed to send job {}\n".format(title)
+            else:
+                job.job_state = 1
+            continue
+    return message
 
 
 # @view_config(route_name='fetch_emails')

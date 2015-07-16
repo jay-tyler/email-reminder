@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from dateutil import parser
 from dateutil.rrule import rrule
 import sqlalchemy as sa
 import os
@@ -184,13 +185,21 @@ class RRule(Base):
             session.flush()
             return instance
 
+    @property
+    def display_time(self):
+        dt = self.dtstart.replace(tzinfo=None)
+        utc_dt = pytz.utc.localize(dt)
+        local_dt = utc_dt.astimezone(pytz.timezone("US/Pacific"))
+        return local_dt.strftime('%Y/%m/%d %R')
+        return "see if this works"
+
 
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
     first = Column(Unicode(50))
     last = Column(Unicode(50))
-    username = Column(Unicode(50), nullable=False)
+    username = Column(Unicode(50), nullable=False, unique=True)
     password = Column(String(60), nullable=False)
     # medium state is 1 for email 2 for text
     dflt_medium = Column(Integer, default=1, nullable=False)
@@ -503,6 +512,7 @@ class Job(Base):
         now = datetime.utcnow()
         query_time = now + timedelta(minutes=minutes_out)
         return session.query(cls).filter(
+            now < Job.execution_time).filter(
             Job.execution_time < query_time).all()
 
 
