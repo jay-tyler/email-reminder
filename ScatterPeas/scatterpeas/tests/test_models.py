@@ -5,6 +5,8 @@ import pytest
 from sqlalchemy import create_engine
 from pyramid import testing
 from sqlalchemy.orm.exc import NoResultFound
+import uuid as pyuuid
+from datetime import timedelta
 
 from scatterpeas import models
 
@@ -63,6 +65,13 @@ def active_alias(db_session, user):
     kwargs['session'] = db_session
     alias = models.Alias.create_alias(**kwargs)
     return alias
+
+
+@pytest.fixture()
+def uuid(db_session, alias):
+    kwargs = {'alias_id': alias.id, 'session': db_session}
+    uuid = models.UUID.create_uuid(**kwargs)
+    return uuid
 
 
 def test_create_user(db_session):
@@ -226,5 +235,112 @@ def test_by_id(db_session, alias):
 
 def test_by_id_invalid_query(db_session):
     assert db_session.query(models.Alias).count() == 0
+    assert models.Alias.by_id(5) is None
+
+
+def test_create_uuid(db_session, alias):
+    kwargs = {'alias_id': alias.id, 'session': db_session}
+    assert db_session.query(models.UUID).count() == 0
+
+    uuid = models.UUID.create_uuid(**kwargs)
+    assert isinstance(uuid, models.UUID)
+
+    for auto in ['id', 'uuid', 'created']:
+        assert getattr(uuid, auto, None) is not None
+
+    assert getattr(uuid, 'confirmation_state') == 0
+    assert getattr(uuid, 'alias_id') == alias.id
+
+    assert db_session.query(models.Alias).count() == 1
+
+
+def test_alias_id_not_null(db_session):
+    with pytest.raises(TypeError):
+        models.UUID.create_uuid()
+
+
+def test_email_sent(db_session, uuid):
+    assert uuid.confirmation_state == 0
+    models.UUID.email_sent(uuid.alias_id)
+    assert uuid.confirmation_state == 1
+
+
+def test_email_sent_invalid_uuid(db_session):
+    assert db_session.query(models.UUID).count() == 0
     with pytest.raises(NoResultFound):
-        models.Alias.retrieve_instance(5)
+        models.UUID.email_sent(5)
+
+
+def test_by_alias_id(db_session, alias, uuid):
+    expected = uuid
+    actual = models.UUID.by_alias_id(alias.id)
+    assert expected == actual
+
+
+def test_by_alias_id_invalid_query(db_session):
+    assert db_session.query(models.UUID).count() == 0
+    with pytest.raises(NoResultFound):
+        models.UUID.by_alias_id(5)
+
+
+def test_by_uuid(db_session, uuid):
+    expected = uuid
+    actual = models.UUID.by_uuid(uuid.uuid)
+    assert expected == actual
+
+
+def test_by_uuid_invalid_query(db_session):
+    assert db_session.query(models.UUID).count() == 0
+    with pytest.raises(NoResultFound):
+        models.UUID.by_uuid(str(pyuuid.uuid4()))
+
+
+def test_by_uuid_no_query(db_session):
+    with pytest.raises(TypeError):
+        models.UUID.by_uuid()
+
+
+def test_get_alias(db_session, uuid):
+    expected = (uuid.alias_id, uuid.confirmation_state)
+    actual = models.UUID.get_alias(uuid.uuid)
+    assert expected == actual
+
+
+def test_get_alias_invalid_query(db_session):
+    assert db_session.query(models.UUID).count() == 0
+    with pytest.raises(NoResultFound):
+        models.UUID.get_alias(str(pyuuid.uuid4()))
+
+
+def test_success(db_session, uuid):
+    uuid.confirmation_state = 1
+    models.UUID.success(uuid.uuid)
+    assert uuid.confirmation_state == 2
+
+
+def test_success_email_not_sent(db_session, uuid):
+    models.UUID.success(uuid.uuid)
+    assert uuid.confirmation_state == 0
+
+
+def test_success_expired_uuid(db_session, uuid):
+    uuid.confirmation_state = -1
+    models.UUID.success(uuid.uuid)
+    assert uuid.confirmation_state == -1
+
+
+def test_update_state_unexpired_uuid(db_session, uuid):
+    models.UUID._update_state(uuid.uuid)
+    assert uuid.confirmation_state == 0
+
+
+def test_update_state_expired_uuid(db_session, uuid):
+    uuid.created -= timedelta(days=2)
+    models.UUID._update_state(uuid.uuid)
+    assert uuid.confirmation_state == -1
+
+
+def test_update_state_already_confirmted(db_session, uuid):
+    uuid.confirmation_state = 2
+    models.UUID._update_state(uuid.uuid)
+    assert uuid.confirmation_state == 2

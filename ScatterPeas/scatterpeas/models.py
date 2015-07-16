@@ -402,7 +402,7 @@ class UUID(Base):
 
     @classmethod
     def get_alias(cls, uuid, session=None):
-        """Queries for uuid row by uuid; returns a tuple containing
+        """Query for uuid row by uuid; return a tuple containing
         (uuid.alias_id, uuid.confirmation_state)
         """
         if session is None:
@@ -416,14 +416,14 @@ class UUID(Base):
         if session is None:
             session = DBSession
         uuid = UUID.by_uuid(uuid)
-        uuid.confirmation_state = 2
+        if uuid.confirmation_state != -1 and uuid.confirmation_state != 0:
+            uuid.confirmation_state = 2
 
     @classmethod
     def by_uuid(cls, uuid, session=None):
         if session is None:
             session = DBSession
-        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
-        return uuid
+        return session.query(cls).filter(UUID.uuid == uuid).one()
 
     @classmethod
     def _update_state(cls, uuid, session=None):
@@ -434,6 +434,9 @@ class UUID(Base):
             eol = uuid.created + timedelta(days=1)
             if eol < datetime.utcnow():
                 uuid.confirmation_state = -1
+
+    def __eq__(self, other):
+        return isinstance(other, UUID) and other.id == self.id
 
     def __repr__(self):
         return "<UUID(uuid='%s', email_state='%s', created='%s', \
