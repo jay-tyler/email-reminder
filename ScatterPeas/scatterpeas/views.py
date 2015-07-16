@@ -11,7 +11,6 @@ from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 
 from .models import (
     DBSession,
-    MyModel,
     )
 
 
