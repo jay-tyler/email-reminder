@@ -19,17 +19,19 @@
         <h2 id="sign-up-title" class="content-head is-center">Sign up</h2>
         <div class="pure-g">
             <div id="get-started" class="l-box-lrg pure-u-1 pure-u-md-2-5">
-                <form id="sign-up" class="pure-form pure-form-stacked">
+                <form action="{{ request.route_url('create_user') }}" method="POST" id="sign-up" class="pure-form pure-form-stacked">
                     <fieldset>
                         <label for="name">First Name</label>
                         <input id="first_name" type="text" placeholder="Your First Name">
 
                         <label for="name">Last Name</label>
-                        <input id="last_name" type="text" placeholder="Your Last Name">
+                        <input id="last_name" type="text" name="last_name" placeholder="Your Last Name">
 
 
                         <label for="email">Email</label>
                         <input id="email" type="email" placeholder="Your Email">
+
+                        <label for=""
 
                         <label for="password">Password</label>
                         <input id="password" type="password" placeholder="Your Password">

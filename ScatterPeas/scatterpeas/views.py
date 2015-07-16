@@ -189,7 +189,10 @@ def logout(request):
 def list_reminders(request):
     if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
-    user = User.by_username(request.authenticated_userid)
+    try:
+        user = User.by_username(request.authenticated_userid)
+    except NoResultFound:
+        return HTTPFound(request.route_url('login'))
     reminders = []
     aliases = user.aliases
     for alias in aliases:
