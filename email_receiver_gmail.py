@@ -3,8 +3,7 @@
 import email
 import imaplib
 
-
-def receive():
+def get_email():
     username = ''
     password = ''
 
@@ -12,11 +11,14 @@ def receive():
     mail.login(username, password)
     mail.list()
     mail.select("inbox")
-    result, data = mail.uid('search', None, "ALL")
+    result, data = mail.search(None, "ALL")
     latest_email_uid = data[0].split()[-1]
-    result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
+    result, data = mail.fetch(latest_email_uid, '(RFC822)')
     raw_email = data[0][1]
-    print raw_email
+    return raw_email
+
+
+def process_email(raw_email):
     email_message = email.message_from_string(raw_email)
     toaddrs = email_message['To'].decode('UTF-8')
     fromaddr = email_message['From'].decode('UTF-8')
@@ -33,6 +35,12 @@ def receive():
         body = part.get_payload().decode('UTF-8')
         print body
         return email_message.get_payload()
+
+
+def receive():
+    raw_email = get_email()
+    payload = process_email(raw_email)
+    return payload
 
 
 if __name__ == '__main__':
