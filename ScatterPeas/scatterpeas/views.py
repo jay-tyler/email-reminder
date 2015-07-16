@@ -400,7 +400,7 @@ def send_scheduled_mail(request):
             else:
                 job.job_state = 1
             continue
-    return 'All jobs done.'
+    return message
 
 
 # @view_config(route_name='fetch_emails')
