@@ -11,6 +11,7 @@ from pyramid.security import remember, forget
 from dateutil import parser
 import pytz
 import scripts
+import datetime
 
 from .models import (
     DBSession,
@@ -216,6 +217,10 @@ def create_reminder(request):
         alias_id = request.params.get('alias_id')
         title = request.params.get('title')
         payload = request.params.get('payload')
+        delivery_time = request.params.get('delivery_time')
+        naive_dt = convert_to_naive_utc(delivery_time)
+        if naive_dt < datetime.utcnow():
+            raise ValueError('That reminder is in the past.')
         reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
         delivery_time = request.params.get('delivery_time')
@@ -267,7 +272,7 @@ def create_user(request):
         last_name = request.params.get('last_name')
         contact_info = request.params.get('contact_info')
         default_medium = int(request.params.get('default_medium'))
-        timezone = request.params.get('timezone')
+        timezone = 'US/Pacific'
         user = User.create_user(username=username, password=password,
             first=first_name, last=last_name, dflt_medium=default_medium,
             timezone=timezone
