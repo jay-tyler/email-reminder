@@ -8,6 +8,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from pyramid.security import remember, forget
 from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
+from dateutil import parser
+import pytz
 
 from .models import (
     DBSession,
@@ -192,13 +194,18 @@ def view_one_reminder(request):
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
     username = request.authenticated_userid
-    # query the database for aliases
+    aliases = User.get_aliases(username)
     if request.method == 'POST':
         owner = request.authenticated_userid
+        alias = request.params.get('alias')
         title = request.params.get('title')
         payload = request.params.get('payload')
         delivery_time = request.params.get('delivery_time')
-        REMINDERS[title] = Reminder(owner, title, payload, delivery_time)
+        dt = parser.parse(delivery_time)
+        local = pytz.timezone("America/Los_Angeles")
+        local_dt = local.localize()
+        reminder = Reminder.create_reminder(alias=alias, title=title,
+            text_payload=payload)
         return HTTPFound(request.route_url('list'))
     else:
         return {'aliases': aliases}
@@ -218,20 +225,20 @@ def edit_reminder(request):
         return {'reminder': reminder}
 
 
-def send_confirmation_email(uuid, contact_info):
-    title = "Your ScatterPeas confirmation link"
-    msg = """\
-Here's your confirmation link. Please click on it, or, if it's not \
-highlighted, copy and paste it into your browser.
+# def send_confirmation_email(uuid, contact_info):
+#     title = "Your ScatterPeas confirmation link"
+#     msg = """\
+# Here's your confirmation link. Please click on it, or, if it's not \
+# highlighted, copy and paste it into your browser.
 
-http://scatterpeas.com/confirm/{uuid}
-""".format(uuid=uuid)
-    send(our_email, contact_info, title, msg)
+# http://scatterpeas.com/confirm/{uuid}
+# """.format(uuid=uuid)
+#     send(our_email, contact_info, title, msg)
 
 
-def send_confirmation_text(uuid, contact_info):
-    msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
-    send_sms(msg, contact_info, our_phone_number)
+# def send_confirmation_text(uuid, contact_info):
+#     msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
+#     send_sms(msg, contact_info, our_phone_number)
 
 
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
@@ -266,9 +273,6 @@ def create_user(request):
         else:
             raise ValueError('You must enter "email" or "text".')
         UUID.email_sent(alias.id)
-        # user = User(username, password, first_name, last_name, email,
-        #             phone, default_medium, timezone)
-        # USERS[username] = user
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}
@@ -297,7 +301,7 @@ def confirm_user(request):
 @view_config(route_name='detail_user', renderer='templates/detail_user.jinja2', permission='edit')
 def detail_user(request):
     user = request.context
-    # get the aliases owned by the user
+    aliases = user.aliases
     return {'user': user, 'aliases': aliases}
 
 
@@ -348,23 +352,23 @@ def detail_alias(request):
 #         activation_state = 0
 
 
-@view_config(route_name='send_scheduled_mail')
-def send_scheduled_mail(request):
-    # query the database for scheduled jobs < cronjob interval
-    for reminder in reminders:
-        if reminder.method == 'email':
-            send(our_email, reminder.email, reminder.title, reminder.payload)
-        else:
-            send_sms(reminder.title, reminder.phone, our_phone_number)
-    pass
+# @view_config(route_name='send_scheduled_mail')
+# def send_scheduled_mail(request):
+#     # query the database for scheduled jobs < cronjob interval
+#     for reminder in reminders:
+#         if reminder.method == 'email':
+#             send(our_email, reminder.email, reminder.title, reminder.payload)
+#         else:
+#             send_sms(reminder.title, reminder.phone, our_phone_number)
+#     pass
 
 
-@view_config(route_name='fetch_emails')
-def fetch_emails(request):
-    raw_email = receive()
-    # break up email into components
-    # create Reminder and write to database
-    pass
+# @view_config(route_name='fetch_emails')
+# def fetch_emails(request):
+#     raw_email = receive()
+#     # break up email into components
+#     # create Reminder and write to database
+#     pass
 
 
 conn_err_msg = """\
