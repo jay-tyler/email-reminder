@@ -199,6 +199,9 @@ class User(Base):
     def create_user(cls, username, password, first="", last="",
                     dflt_medium=1, timezone='America/Los_Angeles',
                     session=None):
+        """Instantiates a new user, and writes it to the database.
+        User must supply a username and password.
+        """
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
@@ -237,6 +240,9 @@ class User(Base):
             self.last,
             self.username,
             self.dflt_medium)
+
+    def __eq__(self, other):
+        return isinstance(other, User) and other.id == self.id
 
 
 class Alias(Base):
@@ -476,18 +482,18 @@ def helper():
     return
 
 
-# def init_db():
-#     engine = create_engine(DATABASE_URL, echo=True)
-#     Base.metadata.create_all(engine)
+def init_db():
+    engine = create_engine(DATABASE_URL, echo=True)
+    Base.metadata.create_all(engine)
 
 
-# def helper():
-#     biz = User.create_user(username='bizbaz', password='asdf')
-#     DBSession.add(biz)
-#     DBSession.commit()
-#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-#     DBSession.add(bizmarkie)
-#     DBSession.commit()
-#     buuid = UUID.create_uuid(bizmarkie.id)
-#     DBSession.add(buuid)
-#     DBSession.commit()
+def helper():
+    biz = User.create_user(username='bizbaz', password='asdf')
+    DBSession.add(biz)
+    DBSession.commit()
+    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+    DBSession.add(bizmarkie)
+    DBSession.commit()
+    buuid = UUID.create_uuid(bizmarkie.id)
+    DBSession.add(buuid)
+    DBSession.commit()
