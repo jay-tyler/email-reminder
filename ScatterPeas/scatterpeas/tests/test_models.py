@@ -9,7 +9,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from scatterpeas import models
 from scatterpeas.models import User, Alias, Reminder, RRule, Job
 from datetime import datetime, timedelta
-import psycopg2
 
 
 TEST_DATABASE_URL = os.environ.get(
@@ -216,7 +215,7 @@ def test_reminder_create_reminder_no_alias(db_session, setup_session):
 
 def test_reminder_retrieve_instance_valid(db_session, setup_session):
     users, aliases, reminders = setup_session
-    out = Reminder.retrieve_instance(reminders[4].id)
+    out = Reminder.retrieve_instance(reminders[4].id, session=db_session)
     assert isinstance(out, Reminder)
 
 
@@ -229,7 +228,7 @@ def test_reminder_retrieve_instance_invalid(db_session, setup_session):
 def test_reminder_get_next_job_exists(db_session, setup_session):
     users, aliases, reminders = setup_session
     future_reminder = reminders[3]
-    out = Reminder.get_next_job(future_reminder.id)
+    out = Reminder.get_next_job(future_reminder.id, session=db_session)
     assert isinstance(out, datetime)
     assert datetime.utcnow() < out
 
@@ -237,7 +236,7 @@ def test_reminder_get_next_job_exists(db_session, setup_session):
 def test_reminder_get_next_job_absent(db_session, setup_session):
     users, aliases, reminders = setup_session
     future_reminder = reminders[1]
-    out = Reminder.get_next_job(future_reminder.id)
+    out = Reminder.get_next_job(future_reminder.id, session=db_session)
     assert out is None
 
 
@@ -245,7 +244,7 @@ def test_reminder_parse_reminder_upcoming_job(db_session, setup_session):
     users, aliases, reminders = setup_session
     past_jobs = db_session.query(Job).all()
     future_reminder = reminders[3]
-    out = Reminder.parse_reminder(future_reminder.id)
+    out = Reminder.parse_reminder(future_reminder.id, session=db_session)
     future_jobs = db_session.query(Job).all()
     assert future_reminder.rstate is True
     assert len(past_jobs) + 1 == len(future_jobs)
@@ -256,7 +255,7 @@ def test_reminder_parse_reminder_jobs_in_past(db_session, setup_session):
     users, aliases, reminders = setup_session
     past_jobs = db_session.query(Job).all()
     past_reminder = reminders[1]
-    out = Reminder.parse_reminder(past_reminder.id)
+    out = Reminder.parse_reminder(past_reminder.id, session=db_session)
     future_jobs = db_session.query(Job).all()
     assert past_reminder.rstate is False
     assert len(past_jobs) == len(future_jobs)
@@ -266,14 +265,14 @@ def test_reminder_parse_reminder_jobs_in_past(db_session, setup_session):
 def test_rrule_get_rrules_valid(db_session, setup_session):
     users, aliases, reminders = setup_session
     reminder = reminders[0]
-    out = RRule.get_rrules(reminder.id)
+    out = RRule.get_rrules(reminder.id, session=db_session)
     assert isinstance(out, datetime)
 
 
 def test_rrule_get_rrules_invalid(db_session, setup_session):
     users, aliases, reminders = setup_session
     with pytest.raises(NoResultFound):
-        out = RRule.get_rrules(1200)
+        out = RRule.get_rrules(1200, session=db_session)
 
 
 def test_rrule_create_valid(db_session, setup_session):
@@ -282,7 +281,7 @@ def test_rrule_create_valid(db_session, setup_session):
                                    title="Here's a title",
                                    session=db_session)
     now = datetime.utcnow()
-    RRule.create_rrule(new_reminder.id, now)
+    RRule.create_rrule(new_reminder.id, now, session=db_session)
 
 
 def test_rrule_create_invalid(db_session, setup_session):
@@ -290,3 +289,19 @@ def test_rrule_create_invalid(db_session, setup_session):
     now = datetime.utcnow()
     with pytest.raises(NoResultFound):
         RRule.create_rrule(1200, now)
+
+
+def test_job_create_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    future_reminder = reminders[3]
+    past_jobs = db_session.query(Job).all()
+    job_time = Reminder.get_next_job(future_reminder.id,
+                                     session=db_session)
+    new_job = Job.create_job(future_reminder.id, job_time, session=db_session)
+    present_jobs = db_session.query(Job).all()
+    assert len(past_jobs) + 1 == len(present_jobs)
+    assert isinstance(new_job, Job)
+
+
+def test_job_create_invalid(db_session, setup_session):
+    pass
