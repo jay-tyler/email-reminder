@@ -3,10 +3,12 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.MIMEImage import MIMEImage
-
+import os
 import imaplib
 
-with open('ScatterPeas/scatterpeas/scripts/gmail_creds.txt', 'r') as fh:
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(HERE, 'gmail_creds.txt'), 'r') as fh:
     username = fh.readline()
     password = fh.readline()
 

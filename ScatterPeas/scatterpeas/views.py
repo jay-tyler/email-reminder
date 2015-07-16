@@ -2,7 +2,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPForbidden
 from sqlalchemy.orm.exc import NoResultFound
-# import os
+import os
 # from sqlalchemy.orm import scoped_session, sessoinmaker
 # from zope.sqlalchemy import ZopeTransactionExtension
 from cryptacular.bcrypt import BCRYPTPasswordManager
@@ -22,7 +22,9 @@ from .models import (
     Job
     )
 
-with open('ScatterPeas/scatterpeas/scripts/gmail_creds.txt') as fh:
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(HERE, 'scripts/gmail_creds.txt'), 'r') as fh:
     our_email = fh.readline()
 
 
