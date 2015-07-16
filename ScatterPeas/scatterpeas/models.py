@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from dateutil import parser
 from dateutil.rrule import rrule
 import sqlalchemy as sa
 import os
@@ -178,6 +179,14 @@ class RRule(Base):
             session.add(instance)
             session.flush()
             return instance
+
+    @property
+    def display_time(self):
+        dt = self.dtstart.replace(tzinfo=None)
+        utc_dt = pytz.utc.localize(dt)
+        local_dt = utc_dt.astimezone(pytz.timezone("US/Pacific"))
+        return local_dt.strftime('%Y/%m/%d %R')
+        return "see if this works"
 
 
 class User(Base):
@@ -486,6 +495,7 @@ class Job(Base):
         now = datetime.utcnow()
         query_time = now + timedelta(minutes=minutes_out)
         return session.query(cls).filter(
+            now < Job.execution_time).filter(
             Job.execution_time < query_time).all()
 
 

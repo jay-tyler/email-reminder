@@ -188,10 +188,12 @@ def logout(request):
 def list_reminders(request):
     if not request.authenticated_userid:
         return HTTPFound(request.route_url('login'))
+    user = User.by_username(request.authenticated_userid)
     reminders = []
-    for reminder in REMINDERS:
-        if REMINDERS[reminder].owner == request.authenticated_userid:
-            reminders.append(REMINDERS[reminder])
+    aliases = user.aliases
+    for alias in aliases:
+        for reminder in alias.reminders:
+            reminders.append(reminder)
     return {'reminders': reminders}
 
 
@@ -212,14 +214,13 @@ def convert_to_naive_utc(delivery_time):
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
     username = request.authenticated_userid
-    aliases = User.get_aliases(username)
     if request.method == 'POST':
         alias_id = request.params.get('alias_id')
         title = request.params.get('title')
         payload = request.params.get('payload')
         delivery_time = request.params.get('delivery_time')
         naive_dt = convert_to_naive_utc(delivery_time)
-        if naive_dt < datetime.utcnow():
+        if naive_dt < datetime.datetime.utcnow():
             raise ValueError('That reminder is in the past.')
         reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
@@ -230,6 +231,11 @@ def create_reminder(request):
         Reminder.parse_reminder(reminder.id)
         return HTTPFound(request.route_url('list'))
     else:
+        all_aliases = User.get_aliases(username)
+        aliases = []
+        for alias in all_aliases:
+            if alias.activation_state == 1:
+                aliases.append(alias)
         return {'aliases': aliases}
 
 
