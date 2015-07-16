@@ -12,59 +12,55 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="js/jquery.datetimepicker.js"></script>
+    <script type="text/javascript">
+        $("#datetimepicker").datetimepicker();
+    </script>
 </head>
 <body>
 <div class="header">
     <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
         <a href="index.html"><img id="logo" class="pure-u-1-5" src="img/logo.png"></a>
-        <!-- <a class="pure-menu-heading pure-u-1-5" href="index.html">Scatter Peas</a> -->
         <ul class="pure-menu-list">
             <!-- <li class="home-menu-link pure-menu-item pure-menu-selected"><a href="#" class="pure-menu-link">Home</a></li> -->
-            <li id="login" class="home-menu-link pure-menu-item"><a href="login.html" class="pure-menu-link" >Login</a></li>
+            <li id="sign-up" class="home-menu-link pure-menu-item"><a href="index.html#sign-up" class="pure-menu-link">Sign Up</a></li>
             
         </ul>
     </div>
 </div>
-<div class="splash-container">
-    <div class="splash">
-        <h1 class="splash-head">Scatter Peas</h1>
-        <p class="splash-subhead">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-        </p>
-        <p>
-            <a href="#form-wrapper" class="pure-button pure-button-primary">Get Started</a>
-        </p>
-    </div>
-</div>
 <div class="content-wrapper">
-    <div class="content">
-        <h2 id="sign-up-title" class="content-head is-center">Sign up</h2>
+    <div id='login-form-wrapper' class="content">
+        <h2 id="sign-up-title" class="content-head is-center">New Reminder</h2>
         <div class="pure-g">
-            <div id="form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-2-5">
+            <div id="new-reminder-form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-2-5">
                 <form id="sign-up" class="pure-form pure-form-stacked">
                     <fieldset>
-                        <label for="name">First Name</label>
-                        <input id="first_name" type="text" placeholder="Your First Name">
+                        <label for="alias">Recipient</label>
+                        <select id="aliases">
+                            <option>Me</option>
+                            <option>Dad</option>
+                            <option>Jan</option>
+                        </select>
+                        <label for="title">Reminder Title</label>
+                        <input id="title" type="text" placeholder="Reminder">
 
-                        <label for="name">Last Name</label>
-                        <input id="last_name" type="text" placeholder="Your Last Name">
+                        <label for="body">Reminder Text (optional)</label>
+                        <textarea id="payload" type="text" placeholder="Additional reminder text"></textarea>
 
 
-                        <label for="email">Email</label>
-                        <input id="email" type="email" placeholder="Your Email">
+                        <label for="date">Date and Time</label>
+                        <input id="datetimepicker" type="text" name="delivery_time" placeholder="Date you want to be reminded">
 
-                        <label for="password">Password</label>
-                        <input id="password" type="password" placeholder="Your Password">
-
-                        <button id="sign-up-button" type="submit" class="pure-button">Sign Up</button>
+                        <button id="sign-up-button" type="submit" class="pure-button" value="Submit" name="submit">Submit</button>
                     </fieldset>
                 </form>
             </div>
         </div>
 
     </div>
-    <div class="footer l-box is-center">
+<!--     <div class="footer l-box is-center">
         Created in the Code Fellows' Python Development Accelerator.
-    </div>
+    </div> -->
 
 </div>
+</body>
+

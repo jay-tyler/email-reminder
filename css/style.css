@@ -40,7 +40,12 @@
 }
 
 #login-form-wrapper {
-    margin-top: -475px;
+    margin-top: -425px;
+}
+
+#new-reminder-form-wrapper {
+    margin-left: 32%;
+    padding-top: 2%;
 }
 
 /*
@@ -50,6 +55,14 @@
 #confirmation-message {
     margin-top: 10%;
 }
+
+/*
+ * -- New Reminder --
+ */
+
+ #payload {
+    width: 100%;
+ }
 
 /*
  * -- PURE OVERRIDES--
