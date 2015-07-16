@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os
-import uuid
-import datetime
 from dateutil.rrule import rrule
 import sqlalchemy as sa
+import os
+import uuid
+from datetime import datetime, timedelta
+
 from sqlalchemy import (
     Column,
     Index,
@@ -36,16 +38,22 @@ import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql://jason@localhost:5432/scatterpeas2'
+    'postgresql:///scatterpeas3'
 )
 
-# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+
 Base = declarative_base()
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(bind=engine)
-DBSession = Session()
 
 
+# engine = create_engine(DATABASE_URL, echo=True)
+# Session = sessionmaker(bind=engine)
+# DBSession = Session()
+# engine = create_engine(DATABASE_URL, echo=True)
+# Base.metadata.create_all(engine)
+# Session = sessionmaker(bind=engine)
+
+<<<<<<< HEAD
 class Reminder(Base):
     """Reminder table includes payload information for reminders, and
     provides functionality for putting jobs onto the jobs table. Columns
@@ -172,8 +180,8 @@ class User(Base):
     first = Column(Unicode(50))
     last = Column(Unicode(50))
     username = Column(Unicode(50), nullable=False)
-    password = Column(Unicode(60), nullable=False)
-    # Medium state is 1 for email, 2 for text
+    password = Column(String(60), nullable=False)
+    # medium state is 1 for email 2 for text
     dflt_medium = Column(Integer, default=1, nullable=False)
     timezone = Column(
         Unicode(50),
@@ -181,9 +189,20 @@ class User(Base):
         nullable=False
     )
 
+    aliases = relationship(
+        'Alias',
+        order_by='Alias.id',
+        backref=backref('users', order_by=id)
+    )
+    # reminders = relationship(
+    #     'Reminders',
+    #     order_by='Reminders.id',
+    #     backref=backref('users', order_by=id)
+    # )
+
     @classmethod
     def create_user(cls, username, password, first="", last="",
-                    dflt_medium=1, timezone='Americas\Los_Angeles',
+                    dflt_medium=1, timezone='America/Los_Angeles',
                     session=None):
         if session is None:
             session = DBSession
@@ -196,10 +215,19 @@ class User(Base):
         return instance
 
     @classmethod
-    def check_password(cls, username, password):
+    def check_password(cls, username, password, session=None):
+        if session is None:
+            session = DBSession
         manager = BCRYPTPasswordManager()
         user = User.by_username(username)
         return manager.check(user.password, password)
+
+    @classmethod
+    def get_aliases(cls, username, session=None):
+        if session is None:
+            session = DBSession
+        user = User.by_username(username)
+        return user.aliases
 
     @classmethod
     def by_username(cls, username, session=None):
@@ -209,8 +237,11 @@ class User(Base):
 
     def __repr__(self):
         return "<User(first='%s', last='%s', username='%s', \
-            dflt_medium='%s')>" % (self.first, self.last,
-            self.username, self.dflt_medium)
+            dflt_medium='%s')>" % (
+            self.first,
+            self.last,
+            self.username,
+            self.dflt_medium)
 
 
 class Alias(Base):
@@ -226,20 +257,32 @@ class Alias(Base):
     __tablename__ = 'aliases'
     reminders = relationship("Reminder", backref="alias")
     id = Column(Integer, primary_key=True, autoincrement=True)
-    alias = Column(Unicode(100), default=u'ME', nullable=False)
+    alias = Column(Unicode(100), default='ME', nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     contact_info = Column(Unicode(75), nullable=False)
     # Medium state is 1 for email, 2 for text
     medium = Column(Integer, default=1)
     activation_state = Column(Integer, default=0)
 
+    uuids = relationship(
+        'UUID',
+        order_by='UUID.id',
+        backref=backref('aliases', order_by=id)
+    )
+    # reminders = relationship(
+    #     'Reminder',
+    #     order_by='Reminder.id',
+    #     backref='aliases'
+    # )
+
     @classmethod
-    def create_alias(cls, user_id, contact_info, alias=None, medium=None,
-                     activation_state=None, session=None):
+    def create_alias(cls, user_id, contact_info, alias=None,
+                     medium=None, activation_state=None, session=None):
         if session is None:
             session = DBSession
-        instance = cls(alias=alias, user_id=user_id, contact_info=contact_info,
-                       medium=medium, activation_state=activation_state)
+        instance = cls(alias=alias, user_id=user_id,
+                       contact_info=contact_info, medium=medium,
+                       activation_state=activation_state)
         session.add(instance)
         return instance
 
@@ -250,8 +293,31 @@ class Alias(Base):
             session = DBSession
         return session.query(Alias).filter(Alias.id == alias_id).one()
 
+    @classmethod
+    def activate(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        alias = session.query(cls).filter(Alias.id == alias_id).one()
+        alias.activation_state = 1
+
+    @classmethod
+    def get_user_id(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        alias = Alias.by_id(alias_id)
+        return alias.user_id
+
+    @classmethod
+    def by_id(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(cls).get(alias_id)
+
     def __repr__(self):
-        return "<Alias(name='%s', contact='%s', c_state='%s', user_id='%s')>" % (self.alias, self.contact_info, self.activation_state, self.user_id)
+        return "<Alias(name='%s', contact='%s', c_state='%s', \
+                user_id='%s')>" % (
+            self.alias, self.contact_info,
+            self.activation_state, self.user_id)
 
 
 class UUID(Base):
@@ -268,7 +334,7 @@ class UUID(Base):
     """
     __tablename__ = 'uuids'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(Unicode(36), nullable=False, default=uuid.uuid4)
+    uuid = Column(String(36), nullable=False, default=str(uuid.uuid4()))
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
     confirmation_state = Column(Integer, default=0, nullable=False)
     created = Column(
@@ -286,8 +352,58 @@ class UUID(Base):
         session.add(instance)
         return instance
 
+    @classmethod
+    def email_sent(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        uuid = UUID.by_alias_id(alias_id)
+        uuid.confirmation_state = 1
+
+    @classmethod
+    def by_alias_id(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(cls).filter(UUID.alias_id == alias_id).one()
+
+    @classmethod
+    def get_alias(cls, uuid, session=None):
+        """Queries for uuid row by uuid; returns a tuple containing
+        (uuid.alias_id, uuid.confirmation_state)
+        """
+        if session is None:
+            session = DBSession
+        UUID._update_state(uuid)
+        uuid = UUID.by_uuid(uuid)
+        return (uuid.alias_id, uuid.confirmation_state)
+
+    @classmethod
+    def success(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = UUID.by_uuid(uuid)
+        uuid.confirmation_state = 2
+
+    @classmethod
+    def by_uuid(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
+        return uuid
+
+    @classmethod
+    def _update_state(cls, uuid, session=None):
+        if session is None:
+            session = DBSession
+        uuid = UUID.by_uuid(uuid)
+        if uuid.confirmation_state != 2:
+            eol = uuid.created + timedelta(days=1)
+            if eol < datetime.utcnow():
+                uuid.confirmation_state = -1
+
     def __repr__(self):
-        return "<UUID(uuid='%s', email_state='%s', created='%s', alias_id='%s')>" % (self.uuid, self.confirmation_state, self.created, self.alias_id)
+        return "<UUID(uuid='%s', email_state='%s', created='%s', \
+                alias_id='%s')>" % (self.uuid, self.confirmation_state,
+                                    self.created, self.alias_id)
 
 
 class Job(Base):
@@ -338,3 +454,20 @@ def helper():
     # reminder1.rrule_id = rrule_id
     DBSession.commit()
     return
+
+
+# def init_db():
+#     engine = create_engine(DATABASE_URL, echo=True)
+#     Base.metadata.create_all(engine)
+
+
+# def helper():
+#     biz = User.create_user(username='bizbaz', password='asdf')
+#     DBSession.add(biz)
+#     DBSession.commit()
+#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+#     DBSession.add(bizmarkie)
+#     DBSession.commit()
+#     buuid = UUID.create_uuid(bizmarkie.id)
+#     DBSession.add(buuid)
+#     DBSession.commit()
