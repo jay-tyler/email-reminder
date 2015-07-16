@@ -59,9 +59,8 @@ class Reminder(Base):
     """
 
     __tablename__ = 'reminders'
-    aliases = relationship("Alias", backref="reminder")
     rrule = relationship("RRule", backref="reminders", uselist=False)
-
+    jobs = relationship("Job", backref="reminder")
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
@@ -228,6 +227,7 @@ class Alias(Base):
         - activation_state: 0 for unverified, 1 for verified
     """
     __tablename__ = 'aliases'
+    reminders = relationship("Reminder", backref="alias")
     id = Column(Integer, primary_key=True, autoincrement=True)
     alias = Column(Unicode(100), default=u'ME', nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
@@ -296,6 +296,7 @@ class UUID(Base):
 class Job(Base):
     """Job table contains jobs that will be sent out"""
     __tablename__ = 'jobs'
+
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
     # 0 for awaiting execution, 1 for executed successfully, 2 for failed
