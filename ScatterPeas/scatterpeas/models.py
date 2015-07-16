@@ -459,6 +459,9 @@ def init_db():
 def helper():
     user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
     user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
+    user3 = User.create_user('nick', 'nickpassword', 'nick', 'draper')
+    user4 = User.create_user('saki', 'nakedmolerats', 'saki', 'fu')
+    user5 = User.create_user('grace', 'gatitapass', 'grace', 'hata')
     DBSession.commit()
     alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
     alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
