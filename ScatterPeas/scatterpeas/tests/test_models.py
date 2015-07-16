@@ -4,8 +4,7 @@ import os
 import pytest
 from sqlalchemy import create_engine
 from pyramid import testing
-from cryptacular.bcrypt import BCRYPTPasswordManager
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 from scatterpeas import models
 
@@ -25,7 +24,7 @@ def connection(request):
     models.DBSession.registry.clear()
     models.DBSession.configure(bind=connection)
     models.Base.metadata.bind = engine
-    # request.addfinalizer(models.Base.metadata.drop_all)
+    request.addfinalizer(models.Base.metadata.drop_all)
     return connection
 
 
@@ -39,8 +38,17 @@ def db_session(request, connection):
     return models.DBSession
 
 
+@pytest.fixture()
+def my_user(db_session):
+    kwargs = {'first': 'foo', 'last': 'bar', 'username': 'foobar',
+              'password': 'asdf'}
+    kwargs['session'] = db_session
+    user = models.User.create_user(**kwargs)
+    return user
+
+
 def test_create_user(db_session):
-    kwargs = {'first': 'foo', 'last': 'bar', 'username': 'foob',
+    kwargs = {'first': 'foo', 'last': 'bar', 'username': 'foobar',
               'password': 'asdf'}
     kwargs['session'] = db_session
     assert db_session.query(models.User).count() == 0
@@ -48,11 +56,10 @@ def test_create_user(db_session):
     user = models.User.create_user(**kwargs)
     assert isinstance(user, models.User)
 
-    assert getattr(user, 'id') is None
+    assert getattr(user, 'id') is not None
     assert getattr(user, 'dflt_medium') == 1
     assert getattr(user, 'timezone') == 'America/Los_Angeles'
 
-    db_session.flush()
     assert db_session.query(models.User).count() == 1
     for field in kwargs:
         if field != 'session' and field != 'password':
@@ -80,13 +87,31 @@ def test_first_and_last_not_required(db_session):
     assert isinstance(user, models.User)
 
 
-def test_by_username(db_session):
-    expected = models.User.create_user('foo', 'bar')
+def test_by_username(db_session, my_user):
+    expected = my_user
     db_session.flush()
-    actual = models.User.by_username('foo')
+    actual = models.User.by_username('foobar')
     assert expected == actual
 
 
-def test_by_username_valid_query(db_session):
-    with pytest.raises(DataError):
-        pass
+def test_by_username_invalid_query(db_session):
+    with pytest.raises(NoResultFound):
+        models.User.by_username('doesnotexist')
+
+
+def test_check_password_invalid_user(db_session):
+    assert models.User.check_password('doesnotexist', 'asdf') is False
+
+
+def test_check_password_wrong_password(db_session, my_user):
+    user = my_user
+    assert models.User.check_password(user.username, 'badpassword') is False
+
+
+def test_check_password_valid_credentials(db_session, my_user):
+    user = my_user
+    assert models.User.check_password(user.username, 'asdf') is True
+
+
+def test_get_aliases(db_session):
+    pass
