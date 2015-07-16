@@ -4,46 +4,27 @@
 {% endblock %}
 {% block body %}
 
-
 <div class="content-wrapper">
   <div id='login-form-wrapper' class="content">
-      <h2 id="sign-up-title" class="content-head is-center">Login</h2>
-      <div class="pure-g">
+    <h2 id="sign-up-title" class="content-head is-center">Login</h2>
+    <div class="pure-g">
       {% if error -%}
         <p class="error"><strong>Error</strong>: {{ error }}</p>
       {%- endif %}
-        <div id="form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-2-5">
-            <form id="sign-up" class="pure-form pure-form-stacked">
-                <fieldset>
-                    <label for="username">Username</label>
-                    <input id="username" name="username" type="text" placeholder="Your Username">
+      <div id="form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-2-5">
+          <form id="sign-up" class="pure-form pure-form-stacked">
+              <fieldset>
+                  <label for="username">Username</label>
+                  <input id="username" name="username" type="text" placeholder="Your Username">
 
-                    <label for="password">Password</label>
-                    <input id="password" name="password" type="password" placeholder="Your Password">
+                  <label for="password">Password</label>
+                  <input id="password" name="password" type="password" placeholder="Your Password">
 
-                    <button id="sign-up-button" type="submit" value="Login" name="Login" class="pure-button">Sign In</button>
-                </fieldset>
-            </form>
-        </div>
+                  <button id="sign-up-button" type="submit" value="Login" name="Login" class="pure-button">Sign In</button>
+              </fieldset>
+          </form>
       </div>
-
+    </div>
   </div>
 </div>
-<!--   <h2>Login</h2>
-  {% if error -%}
-  <p class="error"><strong>Error</strong>: {{ error }}
-  {%- endif %}
-  <form action="{{ request.route_url('login') }}" method="POST" id="login">
-    <div class="field">
-      <label for="username">Username</label>
-      <input type="text" name="username" id="username"/>
-    </div>
-    <div class="field">
-      <label for="password">Password</label>
-      <input type="password" name="password" id="password"/>
-    </div>
-    <div class="control_row">
-      <input type="submit" name="Login" value="Login"/>
-    </div>
-  </form> -->
 {% endblock %}
