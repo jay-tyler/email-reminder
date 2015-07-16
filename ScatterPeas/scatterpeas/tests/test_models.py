@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import create_engine
 from pyramid import testing
 from cryptacular.bcrypt import BCRYPTPasswordManager
+from sqlalchemy.exc import IntegrityError
 
 from scatterpeas import models
 
@@ -57,4 +58,30 @@ def test_create_user(db_session):
         if field != 'session' and field != 'password':
             assert getattr(user, field) == kwargs[field]
 
+    assert getattr(user, 'id') is not None
 
+
+def test_username_not_null(db_session):
+    bad_data = {'first': 'foo', 'last': 'bar', 'password': 'asdf'}
+    with pytest.raises(TypeError):
+        models.User.create_user(session=db_session, **bad_data)
+
+
+def test_password_not_null(db_session):
+    bad_data = {'first': 'foo', 'last': 'bar', 'username': 'foo'}
+    with pytest.raises(TypeError):
+        models.User.create_user(session=db_session, **bad_data)
+
+
+def test_first_and_last_not_required(db_session):
+    kwargs = {'username': 'foo', 'password': 'asdf'}
+    kwargs['session'] = db_session
+    user = models.User.create_user(**kwargs)
+    assert isinstance(user, models.User)
+
+
+def test_by_id(db_session):
+    expected = models.User.create_user('foo', 'bar')
+    db_session.flush()
+    actual = models.User.by_username('foo')
+    assert expected == actual
