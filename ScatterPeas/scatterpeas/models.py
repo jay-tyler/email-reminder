@@ -34,21 +34,20 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
-import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql:///scatterpeas2'
 )
 
-# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
 
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(bind=engine)
-DBSession = Session()
+# engine = create_engine(DATABASE_URL, echo=True)
+# Session = sessionmaker(bind=engine)
+# DBSession = Session()
 
 
 class Reminder(Base):
@@ -169,11 +168,17 @@ class RRule(Base):
 
     @classmethod
     def create_rrule(cls, reminder_id=0,
-                     dtstart=datetime.utcnow(),
+                     dtstart=(datetime.utcnow() + timedelta(hours=24)),
                      session=None):
         if session is None:
             session = DBSession
-        if reminder_id != 0:
+        try:
+            # This try block can disappear when we refactor to use the ORM
+            # more idiomatically
+            Reminder.retrieve_instance(reminder_id)
+        except NoResultFound:
+            raise NoResultFound
+        else:
             instance = cls(reminder_id=reminder_id, dtstart=dtstart)
             session.add(instance)
             session.flush()
@@ -283,7 +288,6 @@ class Alias(Base):
     alias = Column(Unicode(100), default='ME', nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     contact_info = Column(Unicode(75), nullable=False)
-    # Medium state is 1 for email, 2 for text
     medium = Column(Integer, default=1)
     activation_state = Column(Integer, default=0)
 
@@ -320,7 +324,7 @@ class Alias(Base):
 
     @classmethod
     def retrieve_instance(cls, alias_id, session=None):
-        """Retrieves a alias instance from alias_id"""
+        """Retrieve an alias instance from alias_id"""
         if session is None:
             session = DBSession
         return session.query(Alias).filter(Alias.id == alias_id).one()
@@ -329,7 +333,7 @@ class Alias(Base):
     def activate(cls, alias_id, session=None):
         if session is None:
             session = DBSession
-        alias = session.query(cls).filter(Alias.id == alias_id).one()
+        alias = Alias.by_id(alias_id)
         alias.activation_state = 1
 
     @classmethod
@@ -344,6 +348,9 @@ class Alias(Base):
         if session is None:
             session = DBSession
         return session.query(cls).get(alias_id)
+
+    def __eq__(self, other):
+        return other.id == self.id
 
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', \
@@ -400,7 +407,7 @@ class UUID(Base):
 
     @classmethod
     def get_alias(cls, uuid, session=None):
-        """Queries for uuid row by uuid; returns a tuple containing
+        """Query for uuid row by uuid; return a tuple containing
         (uuid.alias_id, uuid.confirmation_state)
         """
         if session is None:
@@ -414,14 +421,14 @@ class UUID(Base):
         if session is None:
             session = DBSession
         uuid = UUID.by_uuid(uuid)
-        uuid.confirmation_state = 2
+        if uuid.confirmation_state != -1 and uuid.confirmation_state != 0:
+            uuid.confirmation_state = 2
 
     @classmethod
     def by_uuid(cls, uuid, session=None):
         if session is None:
             session = DBSession
-        uuid = session.query(cls).filter(UUID.uuid == uuid).one()
-        return uuid
+        return session.query(cls).filter(UUID.uuid == uuid).one()
 
     @classmethod
     def _update_state(cls, uuid, session=None):
@@ -432,6 +439,9 @@ class UUID(Base):
             eol = uuid.created + timedelta(days=1)
             if eol < datetime.utcnow():
                 uuid.confirmation_state = -1
+
+    def __eq__(self, other):
+        return isinstance(other, UUID) and other.id == self.id
 
     def __repr__(self):
         return "<UUID(uuid='%s', email_state='%s', created='%s', \
@@ -451,7 +461,7 @@ class Job(Base):
     # execution time in UTC
     execution_time = Column(DateTime)
 
-    def mark_complete(self, job_id):
+    def mark_complete(self):
         """Mark a job as completed. Call on an instance of a job after the job
         has been completed by a parent task."""
 
@@ -466,9 +476,16 @@ class Job(Base):
     def create_job(cls, reminder_id, execution_time, session=None):
         if session is None:
             session = DBSession
-        instance = cls(reminder_id=reminder_id, execution_time=execution_time,
-                       job_state=0)
-        session.add(instance)
+        try:
+            # This try block can disappear when we refactor to use the ORM
+            # more idiomatically
+            Reminder.retrieve_instance(reminder_id)
+        except NoResultFound:
+            raise NoResultFound
+        else:
+            instance = cls(reminder_id=reminder_id,
+                           execution_time=execution_time, job_state=0)
+            session.add(instance)
         return instance
 
     @classmethod
@@ -571,12 +588,12 @@ def helper():
     reminder5 = Reminder.create_reminder(5, "Here's an email to send to Saki")
     reminder6 = Reminder.create_reminder(6, "Here's an email to send to Grace")
     DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1))
-    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 19, 1))
-    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 13, 1))
-    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 21, 1))
-    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 1))
-    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 10))
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 18))
+    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 16, 19))
+    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 16, 20))
+    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 16, 21))
+    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 22))
+    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 23))
     DBSession.commit()
     users = [user1, user2, user3, user4, user5]
     aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
@@ -585,18 +602,18 @@ def helper():
     return (users, aliases, reminders)
 
 
-def init_db():
-    engine = create_engine(DATABASE_URL, echo=True)
-    Base.metadata.create_all(engine)
+# def init_db():
+#     engine = create_engine(DATABASE_URL, echo=True)
+#     Base.metadata.create_all(engine)
 
 
-def helper():
-    biz = User.create_user(username='bizbaz', password='asdf')
-    DBSession.add(biz)
-    DBSession.commit()
-    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-    DBSession.add(bizmarkie)
-    DBSession.commit()
-    buuid = UUID.create_uuid(bizmarkie.id)
-    DBSession.add(buuid)
-    DBSession.commit()
+# def helper():
+#     biz = User.create_user(username='bizbaz', password='asdf')
+#     DBSession.add(biz)
+#     DBSession.commit()
+#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+#     DBSession.add(bizmarkie)
+#     DBSession.commit()
+#     buuid = UUID.create_uuid(bizmarkie.id)
+#     DBSession.add(buuid)
+#     DBSession.commit()
