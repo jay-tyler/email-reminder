@@ -344,3 +344,9 @@ def test_update_state_already_confirmted(db_session, uuid):
     uuid.confirmation_state = 2
     models.UUID._update_state(uuid.uuid)
     assert uuid.confirmation_state == 2
+
+
+def test_update_state_invalid_uuid(db_session):
+    assert db_session.query(models.UUID).count() == 0
+    with pytest.raises(NoResultFound):
+        models.UUID._update_state(str(pyuuid.uuid4()))
