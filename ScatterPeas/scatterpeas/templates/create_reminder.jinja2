@@ -3,7 +3,7 @@
 <form action="{{ request.route_url('create_reminder') }}" method="POST" class="add_entry">
     <div class="field">
         <p>Select a person to send to:</p>
-        <select name="alias">
+        <select name="alias_id">
             {% for alias in aliases %}
                 <option value="{{ alias.id }}">{{ alias.alias }}</option>
             {% endfor %}

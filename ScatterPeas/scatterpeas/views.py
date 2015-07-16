@@ -200,23 +200,27 @@ def view_one_reminder(request):
     return {'reminder': reminder}
 
 
+def convert_to_naive_utc(delivery_time):
+    dt = parser.parse(delivery_time)
+    local = pytz.timezone("US/Pacific")
+    local_dt = local.localize(dt)
+    utc_dt = local_dt.astimezone(pytz.utc)
+    naive_dt = utc_dt.replace(tzinfo=None)
+    return naive_dt
+
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
     username = request.authenticated_userid
     aliases = User.get_aliases(username)
     if request.method == 'POST':
-        owner = request.authenticated_userid
-        alias = request.params.get('alias')
+        alias_id = request.params.get('alias_id')
         title = request.params.get('title')
         payload = request.params.get('payload')
-        reminder = Reminder.create_reminder(alias=alias, title=title,
+        reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
         delivery_time = request.params.get('delivery_time')
-        dt = parser.parse(delivery_time)
-        local = pytz.timezone("US/Pacific")
-        local_dt = local.localize(dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        rrule = RRule.create_rrule(reminder.id, utc_dt)
+        naive_dt = convert_to_naive_utc(delivery_time)
+        rrule = RRule.create_rrule(reminder.id, naive_dt)
         reminder.rrule_id = rrule.id
         Reminder.get_next_job(reminder.id)
         return HTTPFound(request.route_url('list'))
@@ -293,7 +297,7 @@ def wait_for_confirmation(request):
     return {}
 
 
-@view_config(route_name='confirm_user', renderer='templates/confirm_user.jinja2')
+@view_config(route_name='confirm_user', renderer='templates/confirm.jinja2')
 def confirm_user(request):
     uuid = request.matchdict.get('uuid')
     alias_id, confirmation_state = UUID.get_alias(uuid)

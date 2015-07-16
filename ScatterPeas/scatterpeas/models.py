@@ -123,12 +123,12 @@ class Reminder(Base):
         reminder = cls.retrieve_instance(reminder_id)
         dtstart = RRule.get_rrules(reminder.rrule.id)
         rrule_gen = rrule(0, dtstart=dtstart, count=1)
-        now = datetime.utcnow().replace(tzinfo=pytz.utc)
+        now = datetime.utcnow()
         next_job = rrule_gen.after(now)
         if next_job is None:
             return None
         else:
-            return next_job.astimezone(pytz.utc)
+            return next_job
 
     @classmethod
     def create_reminder(cls, alias_id=0, title="",
@@ -146,6 +146,7 @@ class Reminder(Base):
                            text_payload=text_payload,
                            media_payload=media_payload, rstate=rstate)
             session.add(instance)
+            session.flush()
             return instance
 
 
@@ -170,13 +171,14 @@ class RRule(Base):
 
     @classmethod
     def create_rrule(cls, reminder_id=0,
-                     dtstart=datetime.utcnow().replace(tzinfo=pytz.utc),
+                     dtstart=datetime.utcnow(),
                      session=None):
         if session is None:
             session = DBSession
         if reminder_id != 0:
             instance = cls(reminder_id=reminder_id, dtstart=dtstart)
             session.add(instance)
+            session.flush()
             return instance
 
 
