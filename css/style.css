@@ -29,6 +29,7 @@
 /*
  * -- SIGN UP/LOGIN FORM --
  */
+
 #sign-up {
     margin-left: auto;
     margin-right: auto;
@@ -40,6 +41,14 @@
 
 #login-form-wrapper {
     margin-top: -475px;
+}
+
+/*
+ * -- Confirm--
+ */
+
+#confirmation-message {
+    margin-top: 10%;
 }
 
 /*
