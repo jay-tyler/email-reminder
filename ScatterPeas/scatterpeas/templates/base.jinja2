@@ -15,7 +15,10 @@
         <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
             <a href="{{ request.route_url('home') }}"><img id="logo" class="pure-u-1-5" src="/static/logo.png"></a>
             <ul class="pure-menu-list">
-                <li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('login') }}" class="pure-menu-link">Login</a></li>
+                {% block menu %}
+                {% endblock %}
+                
+                }
             </ul>
         </div>
     </div>
