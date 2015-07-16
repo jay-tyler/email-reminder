@@ -58,3 +58,4 @@ docs/_build/
 target/
 
 *gmail_creds.txt
+*twilio_creds.txt
