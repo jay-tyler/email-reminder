@@ -16,6 +16,7 @@ from .models import (
     User,
     Alias,
     UUID,
+    RRule
     )
 
 
@@ -200,12 +201,16 @@ def create_reminder(request):
         alias = request.params.get('alias')
         title = request.params.get('title')
         payload = request.params.get('payload')
-        delivery_time = request.params.get('delivery_time')
-        dt = parser.parse(delivery_time)
-        local = pytz.timezone("America/Los_Angeles")
-        local_dt = local.localize()
         reminder = Reminder.create_reminder(alias=alias, title=title,
             text_payload=payload)
+        delivery_time = request.params.get('delivery_time')
+        dt = parser.parse(delivery_time)
+        local = pytz.timezone("US/Pacific")
+        local_dt = local.localize(dt)
+        utc_dt = local_dt.astimezone(pytz.utc)
+        rrule = RRule.create_rrule(reminder.id, utc_dt)
+        reminder.rrule_id = rrule.id
+        Reminder.get_next_job(reminder.id)
         return HTTPFound(request.route_url('list'))
     else:
         return {'aliases': aliases}

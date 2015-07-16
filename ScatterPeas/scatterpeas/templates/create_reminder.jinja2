@@ -2,6 +2,14 @@
 {% block body %}
 <form action="{{ request.route_url('create_reminder') }}" method="POST" class="add_entry">
     <div class="field">
+        <p>Select a person to send to:</p>
+        <select name="alias">
+            {% for alias in aliases %}
+                <option value="{{ alias.id }}">{{ alias.alias }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
         <label for="title">Title</label>
         <input type="text" id="title" name="title"/>
     </div>
