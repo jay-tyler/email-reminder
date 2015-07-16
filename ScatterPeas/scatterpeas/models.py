@@ -32,28 +32,23 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
-from datetime import datetime
-from pytz import timezone
 import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql:///scatterpeas3'
+    'postgresql:///scatterpeas2'
 )
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
 
-# engine = create_engine(DATABASE_URL, echo=True)
-# Session = sessionmaker(bind=engine)
-# DBSession = Session()
-# engine = create_engine(DATABASE_URL, echo=True)
-# Base.metadata.create_all(engine)
-# Session = sessionmaker(bind=engine)
+engine = create_engine(DATABASE_URL, echo=True)
+Session = sessionmaker(bind=engine)
+DBSession = Session()
 
-<<<<<<< HEAD
+
 class Reminder(Base):
     """Reminder table includes payload information for reminders, and
     provides functionality for putting jobs onto the jobs table. Columns
@@ -117,12 +112,12 @@ class Reminder(Base):
         reminder = cls.retrieve_instance(reminder_id)
         dtstart = RRule.get_rrules(reminder.rrule.id)
         rrule_gen = rrule(0, dtstart=dtstart, count=1)
-        now = datetime.utcnow().replace(tzinfo=pytz.utc)
+        now = datetime.utcnow()
         next_job = rrule_gen.after(now)
         if next_job is None:
             return None
         else:
-            return next_job.astimezone(pytz.utc)
+            return next_job
 
     @classmethod
     def create_reminder(cls, alias_id=0, title="",
@@ -152,7 +147,7 @@ class RRule(Base):
     # constrain this to primary key of reminders
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
-    dtstart = Column(DateTime(timezone=True))
+    dtstart = Column(DateTime)
 
     @classmethod
     def get_rrules(cls, rrule_id, session=None):
@@ -164,7 +159,7 @@ class RRule(Base):
 
     @classmethod
     def create_rrule(cls, reminder_id=0,
-                     dtstart=datetime.utcnow().replace(tzinfo=pytz.utc),
+                     dtstart=datetime.utcnow(),
                      session=None):
         if session is None:
             session = DBSession
@@ -416,7 +411,18 @@ class Job(Base):
     # excecution, 3 for cancelled
     job_state = Column(Integer)
     # execution time in UTC
-    execution_time = Column(DateTime(timezone=True))
+    execution_time = Column(DateTime)
+
+    def mark_complete(self, job_id):
+        """Mark a job as completed. Call on an instance of a job after the job
+        has been completed by a parent task."""
+
+        if self.job_state in set([0, 2]):
+            self.job_state = 1
+            return True
+        else:
+            #  Case of job not being in an appropriate state to execute
+            return False
 
     @classmethod
     def create_job(cls, reminder_id, execution_time, session=None):
@@ -433,6 +439,17 @@ class Job(Base):
             session = DBSession
         return session.query(Job).filter(Job.id == job_id).one()
 
+    @classmethod
+    def todo(cls, minutes_out=0, session=None):
+        """Return a list of job objects that should be excecuted from now to
+        an optional number of minute(s) out"""
+        if session is None:
+            session = DBSession
+        now = datetime.utcnow()
+        query_time = now + timedelta(minutes=minutes_out)
+        return session.query(cls).filter(
+            Job.execution_time < query_time).all()
+
 
 def init_db():
     engine = sa.create_engine(DATABASE_URL, echo=False)
@@ -448,7 +465,7 @@ def helper():
     DBSession.commit()
     reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
     DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
     DBSession.commit()
     # rrule_id = rrule1.id
     # reminder1.rrule_id = rrule_id
