@@ -32,8 +32,6 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
-from datetime import datetime
-from pytz import timezone
 import pytz
 
 DATABASE_URL = os.environ.get(
@@ -53,7 +51,7 @@ Base = declarative_base()
 # Base.metadata.create_all(engine)
 # Session = sessionmaker(bind=engine)
 
-<<<<<<< HEAD
+
 class Reminder(Base):
     """Reminder table includes payload information for reminders, and
     provides functionality for putting jobs onto the jobs table. Columns
@@ -204,6 +202,9 @@ class User(Base):
     def create_user(cls, username, password, first="", last="",
                     dflt_medium=1, timezone='America/Los_Angeles',
                     session=None):
+        """Instantiates a new user, and writes it to the database.
+        User must supply a username and password.
+        """
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
@@ -242,6 +243,9 @@ class User(Base):
             self.last,
             self.username,
             self.dflt_medium)
+
+    def __eq__(self, other):
+        return isinstance(other, User) and other.id == self.id
 
 
 class Alias(Base):
@@ -434,40 +438,40 @@ class Job(Base):
         return session.query(Job).filter(Job.id == job_id).one()
 
 
-def init_db():
-    engine = sa.create_engine(DATABASE_URL, echo=False)
-    Base.metadata.create_all(engine)
-
-
-def helper():
-    user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
-    user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
-    DBSession.commit()
-    alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
-    alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
-    DBSession.commit()
-    reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
-    DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
-    DBSession.commit()
-    # rrule_id = rrule1.id
-    # reminder1.rrule_id = rrule_id
-    DBSession.commit()
-    return
-
-
 # def init_db():
-#     engine = create_engine(DATABASE_URL, echo=True)
+#     engine = sa.create_engine(DATABASE_URL, echo=False)
 #     Base.metadata.create_all(engine)
 
 
 # def helper():
-#     biz = User.create_user(username='bizbaz', password='asdf')
-#     DBSession.add(biz)
+#     user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
+#     user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
 #     DBSession.commit()
-#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-#     DBSession.add(bizmarkie)
+#     alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
+#     alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
 #     DBSession.commit()
-#     buuid = UUID.create_uuid(bizmarkie.id)
-#     DBSession.add(buuid)
+#     reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
 #     DBSession.commit()
+#     rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
+#     DBSession.commit()
+#     # rrule_id = rrule1.id
+#     # reminder1.rrule_id = rrule_id
+#     DBSession.commit()
+#     return
+
+
+def init_db():
+    engine = create_engine(DATABASE_URL, echo=True)
+    Base.metadata.create_all(engine)
+
+
+def helper():
+    biz = User.create_user(username='bizbaz', password='asdf')
+    DBSession.add(biz)
+    DBSession.commit()
+    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+    DBSession.add(bizmarkie)
+    DBSession.commit()
+    buuid = UUID.create_uuid(bizmarkie.id)
+    DBSession.add(buuid)
+    DBSession.commit()
