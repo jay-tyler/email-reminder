@@ -264,9 +264,9 @@ http://scatterpeas.com/confirm/{uuid}
     scripts.gmail.send(our_email, contact_info, title, msg)
 
 
-# def send_confirmation_text(uuid, contact_info):
-#     msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
-#     send_sms(msg, contact_info, our_phone_number)
+def send_confirmation_text(uuid, contact_info):
+    msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
+    scripts.send_sms.send_sms(msg, '+1{}'.format(contact_info), '+16319564194')
 
 
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
@@ -296,7 +296,7 @@ def create_user(request):
                 contact_info=contact_info, medium=2
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
-            # send_confirmation_text(uuid.uuid, alias.contact_info)
+            send_confirmation_text(uuid.uuid, alias.contact_info)
         UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
@@ -381,19 +381,25 @@ def detail_alias(request):
 def send_scheduled_mail(request):
     # query the database for scheduled jobs < cronjob interval
     jobs = Job.todo(5)
+    message = "All jobs done.\n"
     for job in jobs:
         if job.job_state == 1:
             continue
-        email = job.reminder.alias.contact_info
+        contact = job.reminder.alias.contact_info
         title = job.reminder.title
         payload = job.reminder.text_payload
         if job.reminder.alias.medium == 1:
-            scripts.gmail.send(our_email, email, title, payload)
+            scripts.gmail.send(our_email, contact, title, payload)
             job.job_state = 1
             continue
         else:
-            # send_sms(reminder.title, reminder.phone, our_phone_number)
-            return 'Hit the text response.'
+            try:
+                scripts.send_sms.send_sms(title, '+1{}'.format(contact), '+16319564194')
+            except ValueError:
+                message += "Failed to send job {}\n".format(title)
+            else:
+                job.job_state = 1
+            continue
     return 'All jobs done.'
 
 

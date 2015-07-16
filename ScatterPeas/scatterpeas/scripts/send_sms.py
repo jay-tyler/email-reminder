@@ -12,10 +12,11 @@ with open(os.path.join(HERE, 'twilio_creds.txt'), 'r') as fh:
 def send_sms(body, tonum, fromnum, media_url=None):
     try:
         client = TwilioRestClient(account_sid, auth_token)
-        message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum), media_url='{}'.format(media_url))
+        message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum), media_url=media_url)
         print message.sid
     except twilio.TwilioRestException as e:
         print e
+        raise ValueError(e)
 
 
 def receive_sms():

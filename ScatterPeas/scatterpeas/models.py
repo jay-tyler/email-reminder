@@ -194,7 +194,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     first = Column(Unicode(50))
     last = Column(Unicode(50))
-    username = Column(Unicode(50), nullable=False)
+    username = Column(Unicode(50), nullable=False, unique=True)
     password = Column(String(60), nullable=False)
     # medium state is 1 for email 2 for text
     dflt_medium = Column(Integer, default=1, nullable=False)
