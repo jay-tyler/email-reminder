@@ -10,6 +10,7 @@ from pyramid.security import remember, forget
 # from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 from dateutil import parser
 import pytz
+import scripts
 
 from .models import (
     DBSession,
@@ -20,6 +21,9 @@ from .models import (
     RRule,
     Job
     )
+
+with open('ScatterPeas/scatterpeas/scripts/gmail_creds.txt') as fh:
+    our_email = fh.readline()
 
 
 # this needs to be moved into models once we have them
@@ -232,15 +236,15 @@ def edit_reminder(request):
         return {'reminder': reminder}
 
 
-# def send_confirmation_email(uuid, contact_info):
-#     title = "Your ScatterPeas confirmation link"
-#     msg = """\
-# Here's your confirmation link. Please click on it, or, if it's not \
-# highlighted, copy and paste it into your browser.
+def send_confirmation_email(uuid, contact_info):
+    title = "Your ScatterPeas confirmation link"
+    msg = """\
+Here's your confirmation link. Please click on it, or, if it's not \
+highlighted, copy and paste it into your browser.
 
-# http://scatterpeas.com/confirm/{uuid}
-# """.format(uuid=uuid)
-#     send(our_email, contact_info, title, msg)
+http://scatterpeas.com/confirm/{uuid}
+""".format(uuid=uuid)
+    scripts.gmail.send(our_email, contact_info, title, msg)
 
 
 # def send_confirmation_text(uuid, contact_info):
@@ -269,14 +273,14 @@ def create_user(request):
                 contact_info=contact_info, medium=1
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
-            # send_confirmation_email(uuid.uuid, alias.contact_info)
+            send_confirmation_email(uuid.uuid, alias.contact_info)
         elif default_medium == 2:
             alias = Alias.create_alias(user_id=user.id,
                 contact_info=contact_info, medium=2
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
             # send_confirmation_text(uuid.uuid, alias.contact_info)
-        # UUID.email_sent(alias.id)
+        UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}

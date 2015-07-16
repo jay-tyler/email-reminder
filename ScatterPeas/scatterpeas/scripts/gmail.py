@@ -6,8 +6,9 @@ from email.MIMEImage import MIMEImage
 
 import imaplib
 
-username = 'scatterpeas@gmail.com'
-password = 'peapassword'
+with open('ScatterPeas/scatterpeas/scripts/gmail_creds.txt', 'r') as fh:
+    username = fh.readline()
+    password = fh.readline()
 
 
 def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
