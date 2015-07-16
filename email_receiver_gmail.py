@@ -3,15 +3,15 @@
 import email
 import imaplib
 
+
 def get_email():
     username = ''
     password = ''
 
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(username, password)
-    mail.list()
     mail.select("inbox")
-    result, data = mail.search(None, "ALL")
+    result, data = mail.search(None, '(UNSEEN)')
     latest_email_uid = data[0].split()[-1]
     result, data = mail.fetch(latest_email_uid, '(RFC822)')
     raw_email = data[0][1]
