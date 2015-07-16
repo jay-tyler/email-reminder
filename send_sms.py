@@ -1,10 +1,15 @@
 import twilio
 from twilio.rest import TwilioRestClient
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(HERE, 'twilio_creds.txt'), 'r') as fh:
+    account_sid = fh.readline()
+    auth_token = fh.readline()
 
 
 def send_sms(body, tonum, fromnum, media_url=None):
-    account_sid = "AC82fab74047ef173da0a573a020858a59"
-    auth_token = "225d8e3bf9d05b8ef70873e3fdeb900e"
     try:
         client = TwilioRestClient(account_sid, auth_token)
         message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum), media_url='{}'.format(media_url))
