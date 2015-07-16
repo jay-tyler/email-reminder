@@ -225,6 +225,7 @@ class User(Base):
                        password=hashed, dflt_medium=dflt_medium,
                        timezone=timezone)
         session.add(instance)
+        session.flush()
         return instance
 
     @classmethod
@@ -308,6 +309,7 @@ class Alias(Base):
                        contact_info=contact_info, medium=medium,
                        activation_state=activation_state)
         session.add(instance)
+        session.flush()
         return instance
 
     @classmethod
@@ -374,6 +376,7 @@ class UUID(Base):
         instance = cls(alias_id=alias_id, uuid=uuid,
                        confirmation_state=confirmation_state, created=created)
         session.add(instance)
+        session.flush()
         return instance
 
     @classmethod

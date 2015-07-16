@@ -18,19 +18,18 @@
         <input type="text" id="last_name" name="last_name"/>
     </div>
     <div class="field">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email"/>
+        <label for="email">Email Address or Phone (1234567890)</label>
+        <input type="text" id="contact_info" name="contact_info"/>
     </div>
     <div class="field">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone"/>
+        <p>Contact type: </p>
+        <select name="default_medium">
+            <option value="1">E-mail</option>
+            <option value="2">Text Message</option>
+        </select>
     </div>
     <div class="field">
-        <label for="default_medium">Prefer email or text? (This can be changed per reminder.)</label>
-        <input type="text" id="default_medium" name="default_medium"/>
-    </div>
-    <div class="field">
-        <label for="timezone">Your local timezone (ex. Pacific)</label>
+        <label for="timezone">Your local timezone (ex. US/Pacific)</label>
         <input type="text" id="timezone" name="timezone"/>
     </div>
     <div class="control_row">

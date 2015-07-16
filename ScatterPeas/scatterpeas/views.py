@@ -255,9 +255,8 @@ def create_user(request):
         password = request.params.get('password')
         first_name = request.params.get('first_name')
         last_name = request.params.get('last_name')
-        email = request.params.get('email')
-        phone = request.params.get('phone')
-        default_medium = request.params.get('default_medium').lower()
+        contact_info = request.params.get('contact_info')
+        default_medium = int(request.params.get('default_medium'))
         timezone = request.params.get('timezone')
         user = User.create_user(username=username, password=password,
             first=first_name, last=last_name, dflt_medium=default_medium,
@@ -265,21 +264,19 @@ def create_user(request):
         )
         alias = None
         uuid = None
-        if default_medium == 'email':
-            alias = Alias.create_alias(user_id=user.id, contact_info=email,
-                medium=1
+        if default_medium == 1:
+            alias = Alias.create_alias(user_id=user.id,
+                contact_info=contact_info, medium=1
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
             # send_confirmation_email(uuid.uuid, alias.contact_info)
-        elif default_medium == 'text':
-            alias = Alias.create_alias(user_id=user.id, contact_info=phone,
-                medium=2
+        elif default_medium == 2:
+            alias = Alias.create_alias(user_id=user.id,
+                contact_info=contact_info, medium=2
             )
             uuid = UUID.create_uuid(alias_id=alias.id)
             # send_confirmation_text(uuid.uuid, alias.contact_info)
-        else:
-            raise ValueError('You must enter "email" or "text".')
-        UUID.email_sent(alias.id)
+        # UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}
