@@ -92,11 +92,11 @@ def setup_session(db_session):
         "Here's an email to send to Grace", session=db_session)
     db_session.flush()
     now = datetime.utcnow()
-    rrule1 = RRule.create_rrule(reminder1.id, now + timedelta(hours=-2),
+    rrule1 = RRule.create_rrule(reminder1.id, now + timedelta(hours=-3),
                                 session=db_session)
-    rrule2 = RRule.create_rrule(reminder2.id, now + timedelta(hours=-1),
+    rrule2 = RRule.create_rrule(reminder2.id, now + timedelta(hours=-2),
                                 session=db_session)
-    rrule3 = RRule.create_rrule(reminder3.id, now + timedelta(hours=0),
+    rrule3 = RRule.create_rrule(reminder3.id, now + timedelta(hours=-1),
                                 session=db_session)
     rrule4 = RRule.create_rrule(reminder4.id, now + timedelta(hours=1),
                                 session=db_session)
@@ -304,4 +304,56 @@ def test_job_create_valid(db_session, setup_session):
 
 
 def test_job_create_invalid(db_session, setup_session):
-    pass
+    users, aliases, reminders = setup_session
+    job_time = datetime.utcnow()
+    with pytest.raises(NoResultFound):
+        Job.create_job(1200, job_time, session=db_session)
+
+
+def test_job_mark_complete_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    future_reminder = reminders[3]
+    job_time = Reminder.get_next_job(future_reminder.id,
+                                     session=db_session)
+    new_job = Job.create_job(future_reminder.id, job_time,
+                             session=db_session)
+    assert new_job.job_state == 0
+    out = new_job.mark_complete()
+    assert new_job.job_state == 1
+    assert out is True
+
+
+def test_job_mark_complete_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    future_reminder = reminders[3]
+    job_time = Reminder.get_next_job(future_reminder.id,
+                                     session=db_session)
+    new_job = Job.create_job(future_reminder.id, job_time,
+                             session=db_session)
+    new_job.mark_complete()
+    # Try to flip rstate again
+    out = new_job.mark_complete()
+    assert out is False
+    assert new_job.job_state == 1
+
+
+def test_job_todo_over_hour_out(db_session, setup_session):
+    users, aliases, reminders = setup_session
+
+    for reminder in reminders:
+        out = Reminder.parse_reminder(reminder.id, session=db_session)
+    todo_list = Job.todo(90, session=db_session)
+    assert len(todo_list) == 1
+    for job in todo_list:
+        assert job.execution_time > datetime.utcnow()
+
+
+def test_job_todo_over_two_hours_out(db_session, setup_session):
+    users, aliases, reminders = setup_session
+
+    for reminder in reminders:
+        out = Reminder.parse_reminder(reminder.id, session=db_session)
+    todo_list = Job.todo(160, session=db_session)
+    assert len(todo_list) == 2
+    for job in todo_list:
+        assert job.execution_time > datetime.utcnow()
