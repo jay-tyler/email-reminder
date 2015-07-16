@@ -2,6 +2,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPForbidden
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
 import os
 # from sqlalchemy.orm import scoped_session, sessoinmaker
 # from zope.sqlalchemy import ZopeTransactionExtension
@@ -271,6 +272,7 @@ def send_confirmation_text(uuid, contact_info):
 
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
 def create_user(request):
+    error = ''
     if request.method == 'POST':
         username = request.params.get('username')
         password = request.params.get('password')
@@ -279,10 +281,14 @@ def create_user(request):
         contact_info = request.params.get('contact_info')
         default_medium = int(request.params.get('default_medium'))
         timezone = 'US/Pacific'
-        user = User.create_user(username=username, password=password,
-            first=first_name, last=last_name, dflt_medium=default_medium,
-            timezone=timezone
-        )
+        try:
+            user = User.create_user(username=username, password=password,
+                first=first_name, last=last_name, dflt_medium=default_medium,
+                timezone=timezone
+            )
+        except IntegrityError:
+            error = "That username is taken."
+            return {'error': error}
         alias = None
         uuid = None
         if default_medium == 1:
@@ -300,7 +306,7 @@ def create_user(request):
         UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
-        return {}
+        return {'error': error}
 
 
 @view_config(route_name='wait_for_confirmation', renderer='templates/wait_for_confirmation.jinja2')
