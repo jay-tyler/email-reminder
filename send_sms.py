@@ -5,8 +5,10 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 with open(os.path.join(HERE, 'twilio_creds.txt'), 'r') as fh:
-    account_sid = fh.readline()
-    auth_token = fh.readline()
+    account_sid = fh.readline().strip()
+    auth_token = fh.readline().strip()
+    print account_sid
+    print auth_token
 
 
 def send_sms(body, tonum, fromnum, media_url=None):
@@ -25,5 +27,5 @@ def receive_sms():
 
 
 if __name__ == '__main__':
-    send_sms('hellopea', '+17863009899', '+16319564194', 'https://theinfinitevariety.files.wordpress.com/2010/11/47nakedmolerat.jpg')
+    send_sms('hellopea', '+14258943425', '+16319564194', 'https://theinfinitevariety.files.wordpress.com/2010/11/47nakedmolerat.jpg')
     # receive_sms()
