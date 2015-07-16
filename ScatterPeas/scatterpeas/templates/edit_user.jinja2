@@ -22,8 +22,10 @@
         <input type="tel" id="phone" name="phone" value="{{ user.phone }}"/>
     </div>
     <div class="field">
-        <label for="default_medium">Prefer email or text? (This can be changed per reminder.)</label>
-        <input type="text" id="default_medium" name="default_medium" value="{{ user.default_medium }}"/>
+        <select name="default_method">
+            <option value="email">E-mail</option>
+            <option value="text">Text Message</option>
+        <select>
     </div>
     <div class="field">
         <label for="timezone">Your local timezone (ex. Pacific)</label>

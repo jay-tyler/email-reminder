@@ -8,9 +8,15 @@ from sqlalchemy.orm.exc import NoResultFound
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from pyramid.security import remember, forget
 from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
+from dateutil import parser
+import pytz
 
 from .models import (
     DBSession,
+    User,
+    Alias,
+    UUID,
+    RRule
     )
 
 
@@ -47,11 +53,25 @@ class Reminder(object):
             (Allow, 'group:admin', ALL_PERMISSIONS)
         ]
 
-    def __init__(self, owner, title, payload, delivery_time):
+    def __init__(self, owner, title, payload, delivery_time, method='email',
+                 email=None, phone=None):
         self.owner = owner
         self.title = title
         self.payload = payload
         self.delivery_time = delivery_time
+        self.method = method
+        self.email = email
+        self.phone = phone
+
+
+class Alias(object):
+    @property
+    def __acl__(self):
+        rule_list = []
+        for user in self.users:
+            rule_list.append((Allow, user.username, 'edit'))
+        rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
+        return rule_list
 
 
 USERS = {}
@@ -94,7 +114,19 @@ class UserFactory(object):
         self.request = request
 
     def __getitem__(self, username):
-        return USERS[username]
+        return User.by_username(username)
+
+
+class AliasFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS)
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem(self, id):
+        return Alias.by_id(id)
 
 
 def groupfinder(userid, request):
@@ -104,18 +136,12 @@ def groupfinder(userid, request):
 
 
 def do_login(request):
-    # username = request.params.get('username', None)
-    # password = request.params.get('password', None)
-    # if not (username and password):
-    #     raise ValueError('both username and password are required')
+    username = request.params.get('username', None)
+    password = request.params.get('password', None)
+    if not (username and password):
+        raise ValueError('both username and password are required')
 
-    # settings = request.registry.settings
-    # manager = BCRYPTPasswordManager()
-    # if username == settings.get('auth.username', ''):
-    #     hashed = settings.get('auth.password', '')
-    #     return manager.check(hashed, password)
-    # return False
-    return True
+    return User.check_password(username, password)
 
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
@@ -168,15 +194,26 @@ def view_one_reminder(request):
 
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
+    username = request.authenticated_userid
+    aliases = User.get_aliases(username)
     if request.method == 'POST':
         owner = request.authenticated_userid
+        alias = request.params.get('alias')
         title = request.params.get('title')
         payload = request.params.get('payload')
+        reminder = Reminder.create_reminder(alias=alias, title=title,
+            text_payload=payload)
         delivery_time = request.params.get('delivery_time')
-        REMINDERS[title] = Reminder(owner, title, payload, delivery_time)
+        dt = parser.parse(delivery_time)
+        local = pytz.timezone("US/Pacific")
+        local_dt = local.localize(dt)
+        utc_dt = local_dt.astimezone(pytz.utc)
+        rrule = RRule.create_rrule(reminder.id, utc_dt)
+        reminder.rrule_id = rrule.id
+        Reminder.get_next_job(reminder.id)
         return HTTPFound(request.route_url('list'))
     else:
-        return {}
+        return {'aliases': aliases}
 
 
 @view_config(route_name='edit_reminder', renderer='templates/edit_reminder.jinja2', permission='edit')
@@ -193,6 +230,22 @@ def edit_reminder(request):
         return {'reminder': reminder}
 
 
+# def send_confirmation_email(uuid, contact_info):
+#     title = "Your ScatterPeas confirmation link"
+#     msg = """\
+# Here's your confirmation link. Please click on it, or, if it's not \
+# highlighted, copy and paste it into your browser.
+
+# http://scatterpeas.com/confirm/{uuid}
+# """.format(uuid=uuid)
+#     send(our_email, contact_info, title, msg)
+
+
+# def send_confirmation_text(uuid, contact_info):
+#     msg = "Your ScatterPeas confirmation link: http://scatterpeas.com/confirm/{uuid}".format(uuid=uuid)
+#     send_sms(msg, contact_info, our_phone_number)
+
+
 @view_config(route_name='create_user', renderer='templates/create_user.jinja2')
 def create_user(request):
     if request.method == 'POST':
@@ -202,12 +255,29 @@ def create_user(request):
         last_name = request.params.get('last_name')
         email = request.params.get('email')
         phone = request.params.get('phone')
-        default_medium = request.params.get('default_medium')
+        default_medium = request.params.get('default_medium').lower()
         timezone = request.params.get('timezone')
-        user = User(username, password, first_name, last_name, email,
-                    phone, default_medium, timezone)
-        USERS[username] = user
-        # call the send confirmation email function
+        user = User.create_user(username=username, password=password,
+            first=first_name, last=last_name, dflt_medium=default_medium,
+            timezone=timezone
+        )
+        alias = None
+        uuid = None
+        if default_medium == 'email':
+            alias = Alias.create_alias(user_id=user.id, contact_info=email,
+                medium=1
+            )
+            uuid = UUID.create_uuid(alias_id=alias.id)
+            send_confirmation_email(uuid.uuid, alias.contact_info)
+        elif default_medium == 'text':
+            alias = Alias.create_alias(user_id=user.id, contact_info=phone,
+                medium=2
+            )
+            uuid = UUID.create_uuid(alias_id=alias.id)
+            send_confirmation_text(uuid.uuid, alias.contact_info)
+        else:
+            raise ValueError('You must enter "email" or "text".')
+        UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
         return {}
@@ -218,19 +288,26 @@ def wait_for_confirmation(request):
     return {}
 
 
-@view_config(route_name='check_confirmation', renderer='templates/check_confirmation.jinja2')
-def check_confirmation(request):
+@view_config(route_name='confirm_user', renderer='templates/confirm_user.jinja2')
+def confirm_user(request):
     uuid = request.matchdict.get('uuid')
-    # query the uuid table for the associated user
-    # set the user status to activated
-    # send success or error message to the template
-    pass
+    alias_id, confirmation_state = UUID.get_alias(uuid)
+    if confirmation_state == 1:
+        Alias.activate(alias_id)
+        UUID.success(uuid)
+        message = "Success! You may now send reminders to this contact."
+    elif confirmation_state == 2:
+        message = "This address has already been confirmed."
+    elif confirmation_state == -1:
+        message = 'This confirmation link has expired.  Please try to confirm again.'
+    return {'message': message}
 
 
 @view_config(route_name='detail_user', renderer='templates/detail_user.jinja2', permission='edit')
 def detail_user(request):
     user = request.context
-    return {'user': user}
+    aliases = user.aliases
+    return {'user': user, 'aliases': aliases}
 
 
 @view_config(route_name='edit_user', renderer='templates/edit_user.jinja2', permission='edit')
@@ -238,24 +315,65 @@ def edit_user(request):
     user = request.context
     if request.method == 'POST':
         user.username = request.authenticated_userid
-        user.password = request.params.get('password')
+        password = request.params.get('password')
+        manager = BCRYPTPasswordManager()
+        hashed = manager.encode(password)
+        user.password = hashed
         user.first_name = request.params.get('first_name')
         user.last_name = request.params.get('last_name')
-        user.email = request.params.get('email')
-        user.phone = request.params.get('phone')
-        user.default_medium = request.params.get('default_medium')
+        default_medium = request.params.get('default_medium').lower()
+        if default_medium == 'email':
+            user.dflt_medium = 1
+        if default_medium == 'text':
+            user.dflt_medium = 2
+        else:
+            raise ValueError()
         user.timezone = request.params.get('timezone')
-        USERS[user.username] = user
         return HTTPFound(request.route_url('list'))
     else:
         return {'user': user}
 
 
-@view_config(route_name='send_scheduled_mail')
-def send_scheduled_mail(request):
-    # query the database for scheduled jobs < cronjob interval
-    # call the send reminder email function for each job
-    pass
+@view_config(route_name='detail_alias', renderer='templates/detail_alias.jinja2', permission='edit')
+def detail_alias(request):
+    alias = request.context
+    return {'alias': alias}
+
+
+# @view_config(route_name='edit_alias', renderer='templates/edit_alias.jinja2', permission='edit')
+# def edit_alias(request):
+#     alias = request.context
+#     if request.method == 'POST':
+#         alias = request.params.get('alias')
+#         contact_info = request.params.get('contact_info')
+#         medium_text = request.params.get('medium')
+#         medium = None
+#         if medium_text == 'email':
+#             medium = 1
+#         if medium_text == 'text':
+#             medium = 2
+#         else:
+#             raise ValueError()
+#         activation_state = 0
+
+
+# @view_config(route_name='send_scheduled_mail')
+# def send_scheduled_mail(request):
+#     # query the database for scheduled jobs < cronjob interval
+#     for reminder in reminders:
+#         if reminder.method == 'email':
+#             send(our_email, reminder.email, reminder.title, reminder.payload)
+#         else:
+#             send_sms(reminder.title, reminder.phone, our_phone_number)
+#     pass
+
+
+# @view_config(route_name='fetch_emails')
+# def fetch_emails(request):
+#     raw_email = receive()
+#     # break up email into components
+#     # create Reminder and write to database
+#     pass
 
 
 conn_err_msg = """\
