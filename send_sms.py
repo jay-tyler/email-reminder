@@ -7,8 +7,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(HERE, 'twilio_creds.txt'), 'r') as fh:
     account_sid = fh.readline().strip()
     auth_token = fh.readline().strip()
-    print account_sid
-    print auth_token
 
 
 def send_sms(body, tonum, fromnum, media_url=None):
