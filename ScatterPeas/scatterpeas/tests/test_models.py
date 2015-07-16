@@ -80,8 +80,13 @@ def test_first_and_last_not_required(db_session):
     assert isinstance(user, models.User)
 
 
-def test_by_id(db_session):
+def test_by_username(db_session):
     expected = models.User.create_user('foo', 'bar')
     db_session.flush()
     actual = models.User.by_username('foo')
     assert expected == actual
+
+
+def test_by_username_valid_query(db_session):
+    with pytest.raises(DataError):
+        pass

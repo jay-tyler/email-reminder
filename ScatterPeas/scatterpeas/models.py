@@ -47,9 +47,6 @@ Base = declarative_base()
 # engine = create_engine(DATABASE_URL, echo=True)
 # Session = sessionmaker(bind=engine)
 # DBSession = Session()
-# engine = create_engine(DATABASE_URL, echo=True)
-# Base.metadata.create_all(engine)
-# Session = sessionmaker(bind=engine)
 
 
 class Reminder(Base):
