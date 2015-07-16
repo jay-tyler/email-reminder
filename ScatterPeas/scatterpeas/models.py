@@ -92,14 +92,12 @@ class Reminder(Base):
                 "media_payload": reminder.media_payload,
                 "alias_id": reminder.alias_id}
 
-
     @classmethod
     def retrieve_instance(cls, reminder_id, session=None):
         """Retrieves a reminder instance from reminder_id"""
         if session is None:
             session = DBSession
         return session.query(Reminder).filter(Reminder.id == reminder_id).one()
-
 
     @classmethod
     def get_next_job(cls, reminder_id, session=None):
@@ -142,7 +140,6 @@ class RRule(Base):
     class is not yet fully implemented, but stands in for future
     expandability"""
     __tablename__ = 'rrules'
-
 
     # constrain this to primary key of reminders
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
