@@ -38,20 +38,18 @@ import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
-    'postgresql:///scatterpeas3'
+    'postgresql:///scatterpeas2'
 )
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
 
-# engine = create_engine(DATABASE_URL, echo=True)
-# Session = sessionmaker(bind=engine)
-# DBSession = Session()
-# engine = create_engine(DATABASE_URL, echo=True)
-# Base.metadata.create_all(engine)
-# Session = sessionmaker(bind=engine)
+engine = create_engine(DATABASE_URL, echo=True)
+Session = sessionmaker(bind=engine)
+DBSession = Session()
+
 
 class Reminder(Base):
     """Reminder table includes payload information for reminders, and
@@ -159,7 +157,7 @@ class RRule(Base):
     # constrain this to primary key of reminders
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
-    dtstart = Column(DateTime(timezone=True))
+    dtstart = Column(DateTime)
 
     @classmethod
     def get_rrules(cls, rrule_id, session=None):
@@ -219,6 +217,9 @@ class User(Base):
     def create_user(cls, username, password, first="", last="",
                     dflt_medium=1, timezone='America/Los_Angeles',
                     session=None):
+        """Instantiates a new user, and writes it to the database.
+        User must supply a username and password.
+        """
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
@@ -261,6 +262,9 @@ class User(Base):
             self.last,
             self.username,
             self.dflt_medium)
+
+    def __eq__(self, other):
+        return isinstance(other, User) and other.id == self.id
 
 
 class Alias(Base):
@@ -445,7 +449,18 @@ class Job(Base):
     # excecution, 3 for cancelled
     job_state = Column(Integer)
     # execution time in UTC
-    execution_time = Column(DateTime(timezone=True))
+    execution_time = Column(DateTime)
+
+    def mark_complete(self, job_id):
+        """Mark a job as completed. Call on an instance of a job after the job
+        has been completed by a parent task."""
+
+        if self.job_state in set([0, 2]):
+            self.job_state = 1
+            return True
+        else:
+            #  Case of job not being in an appropriate state to execute
+            return False
 
     @classmethod
     def create_job(cls, reminder_id, execution_time, session=None):
@@ -461,6 +476,17 @@ class Job(Base):
         if session is None:
             session = DBSession
         return session.query(Job).filter(Job.id == job_id).one()
+
+    @classmethod
+    def todo(cls, minutes_out=0, session=None):
+        """Return a list of job objects that should be excecuted from now to
+        an optional number of minute(s) out"""
+        if session is None:
+            session = DBSession
+        now = datetime.utcnow()
+        query_time = now + timedelta(minutes=minutes_out)
+        return session.query(cls).filter(
+            Job.execution_time < query_time).all()
 
 
 class RootFactory(object):
@@ -525,32 +551,52 @@ def init_db():
 def helper():
     user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
     user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
+    user3 = User.create_user('nick', 'nickpassword', 'nick', 'draper')
+    user4 = User.create_user('saki', 'nakedmolerats', 'saki', 'fu')
+    user5 = User.create_user('grace', 'gatitapass', 'grace', 'hata')
     DBSession.commit()
     alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
     alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
+    alias3 = Alias.create_alias(2, "theryty@gmail.com", 1)
+    alias4 = Alias.create_alias(3, "nickemail@email.com", 1)
+    alias5 = Alias.create_alias(4, "sakiemail@email.com", 1)
+    alias6 = Alias.create_alias(5, "graceemail@email.com", 1)
     DBSession.commit()
-    reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
+    reminder1 = Reminder.create_reminder(1, "Here's an email to send to \
+                                         Jason's email")
+    reminder2 = Reminder.create_reminder(2, "Heres a text to send to \
+                                         Jason's phone")
+    reminder3 = Reminder.create_reminder(3, "Here's a email to send to Ryan")
+    reminder4 = Reminder.create_reminder(4, "Here's an email to send to Nick")
+    reminder5 = Reminder.create_reminder(5, "Here's an email to send to Saki")
+    reminder6 = Reminder.create_reminder(6, "Here's an email to send to Grace")
     DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1))
+    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 19, 1))
+    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 13, 1))
+    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 21, 1))
+    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 1))
+    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 10))
     DBSession.commit()
-    # rrule_id = rrule1.id
-    # reminder1.rrule_id = rrule_id
-    DBSession.commit()
-    return
+    users = [user1, user2, user3, user4, user5]
+    aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
+    reminders = [reminder1, reminder2, reminder3, reminder4, reminder5,
+                 reminder6]
+    return (users, aliases, reminders)
 
 
-# def init_db():
-#     engine = create_engine(DATABASE_URL, echo=True)
-#     Base.metadata.create_all(engine)
+def init_db():
+    engine = create_engine(DATABASE_URL, echo=True)
+    Base.metadata.create_all(engine)
 
 
-# def helper():
-#     biz = User.create_user(username='bizbaz', password='asdf')
-#     DBSession.add(biz)
-#     DBSession.commit()
-#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-#     DBSession.add(bizmarkie)
-#     DBSession.commit()
-#     buuid = UUID.create_uuid(bizmarkie.id)
-#     DBSession.add(buuid)
-#     DBSession.commit()
+def helper():
+    biz = User.create_user(username='bizbaz', password='asdf')
+    DBSession.add(biz)
+    DBSession.commit()
+    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+    DBSession.add(bizmarkie)
+    DBSession.commit()
+    buuid = UUID.create_uuid(bizmarkie.id)
+    DBSession.add(buuid)
+    DBSession.commit()
