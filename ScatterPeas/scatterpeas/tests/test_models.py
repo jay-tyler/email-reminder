@@ -57,7 +57,4 @@ def test_create_user(db_session):
         if field != 'session' and field != 'password':
             assert getattr(user, field) == kwargs[field]
 
-    manager = BCRYPTPasswordManager()
-    hashed = manager.encode()
-    assert getattr(user, 'password') == hashed
 
