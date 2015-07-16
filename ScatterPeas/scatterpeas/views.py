@@ -222,7 +222,7 @@ def create_reminder(request):
         naive_dt = convert_to_naive_utc(delivery_time)
         rrule = RRule.create_rrule(reminder.id, naive_dt)
         reminder.rrule_id = rrule.id
-        Reminder.get_next_job(reminder.id)
+        Reminder.parse_reminder(reminder.id)
         return HTTPFound(request.route_url('list'))
     else:
         return {'aliases': aliases}
@@ -366,15 +366,24 @@ def detail_alias(request):
 #         activation_state = 0
 
 
-# @view_config(route_name='send_scheduled_mail')
-# def send_scheduled_mail(request):
-#     # query the database for scheduled jobs < cronjob interval
-#     for reminder in reminders:
-#         if reminder.method == 'email':
-#             send(our_email, reminder.email, reminder.title, reminder.payload)
-#         else:
-#             send_sms(reminder.title, reminder.phone, our_phone_number)
-#     pass
+@view_config(route_name='send_scheduled_mail', renderer='string')
+def send_scheduled_mail(request):
+    # query the database for scheduled jobs < cronjob interval
+    jobs = Job.todo(5)
+    for job in jobs:
+        if job.job_state == 1:
+            continue
+        email = job.reminder.alias.contact_info
+        title = job.reminder.title
+        payload = job.reminder.text_payload
+        if job.reminder.alias.medium == 1:
+            scripts.gmail.send(our_email, email, title, payload)
+            job.job_state = 1
+            continue
+        else:
+            # send_sms(reminder.title, reminder.phone, our_phone_number)
+            return 'Hit the text response.'
+    return 'All jobs done.'
 
 
 # @view_config(route_name='fetch_emails')

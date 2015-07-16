@@ -42,5 +42,6 @@ def main(global_config, **settings):
     config.add_route('wait_for_confirmation', '/waitforconfirmation')
     config.add_route('confirm_user', '/confirm/{uuid}')
     config.add_route('detail_alias', '/detailalias/{id}', factory=AliasFactory, traverse='/{id}')
+    config.add_route('send_scheduled_mail', '/sendmail')
     config.scan()
     return config.make_wsgi_app()
