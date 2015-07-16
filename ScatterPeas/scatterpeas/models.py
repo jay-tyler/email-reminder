@@ -451,7 +451,7 @@ class Job(Base):
     # execution time in UTC
     execution_time = Column(DateTime)
 
-    def mark_complete(self, job_id):
+    def mark_complete(self):
         """Mark a job as completed. Call on an instance of a job after the job
         has been completed by a parent task."""
 
@@ -571,12 +571,12 @@ def helper():
     reminder5 = Reminder.create_reminder(5, "Here's an email to send to Saki")
     reminder6 = Reminder.create_reminder(6, "Here's an email to send to Grace")
     DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1))
-    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 19, 1))
-    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 13, 1))
-    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 21, 1))
-    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 1))
-    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 10))
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 18))
+    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 16, 19))
+    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 16, 20))
+    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 16, 21))
+    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 22))
+    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 23))
     DBSession.commit()
     users = [user1, user2, user3, user4, user5]
     aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
@@ -585,18 +585,18 @@ def helper():
     return (users, aliases, reminders)
 
 
-def init_db():
-    engine = create_engine(DATABASE_URL, echo=True)
-    Base.metadata.create_all(engine)
+# def init_db():
+#     engine = create_engine(DATABASE_URL, echo=True)
+#     Base.metadata.create_all(engine)
 
 
-def helper():
-    biz = User.create_user(username='bizbaz', password='asdf')
-    DBSession.add(biz)
-    DBSession.commit()
-    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-    DBSession.add(bizmarkie)
-    DBSession.commit()
-    buuid = UUID.create_uuid(bizmarkie.id)
-    DBSession.add(buuid)
-    DBSession.commit()
+# def helper():
+#     biz = User.create_user(username='bizbaz', password='asdf')
+#     DBSession.add(biz)
+#     DBSession.commit()
+#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+#     DBSession.add(bizmarkie)
+#     DBSession.commit()
+#     buuid = UUID.create_uuid(bizmarkie.id)
+#     DBSession.add(buuid)
+#     DBSession.commit()
