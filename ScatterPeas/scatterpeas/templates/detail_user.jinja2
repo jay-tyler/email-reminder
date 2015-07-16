@@ -1,0 +1,11 @@
+{% extends "base.jinja2" %}
+{% block body %}
+<h2>{{ user.username }}</h2>
+<p>{{ user.first_name }}</p>
+<p>{{ user.last_name }}</p>
+<p>{{ user.default_medium }}</p>
+<p>{{ user.timezone }}</p>
+{% for alias in aliases %}
+    <a href="{{ request.route_url('detail_alias', alias=alias.id) }}">{{ alias.alias }}</a>
+{% endfor %}
+{% endblock %}

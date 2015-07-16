@@ -1,0 +1,38 @@
+{% extends "base.jinja2" %}
+{% block body %}
+<form action="{{ request.route_url('edit_user', username=user.username) }}" method="POST" class="add_entry">
+    <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" value="{{ user.password }}"/>
+    </div>
+    <div class="field">
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}"/>
+    </div>
+    <div class="field">
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}"/>
+    </div>
+    <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" value="{{ user.email }}"/>
+    </div>
+    <div class="field">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" value="{{ user.phone }}"/>
+    </div>
+    <div class="field">
+        <select name="default_method">
+            <option value="email">E-mail</option>
+            <option value="text">Text Message</option>
+        <select>
+    </div>
+    <div class="field">
+        <label for="timezone">Your local timezone (ex. Pacific)</label>
+        <input type="text" id="timezone" name="timezone" value="{{ user.timezone }}"/>
+    </div>
+    <div class="control_row">
+        <input id="EUButton" type="submit" value="Submit" name="submit"/>
+    </div>
+</form>
+{% endblock %}
