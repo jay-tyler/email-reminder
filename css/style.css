@@ -27,7 +27,7 @@
 }
 
 /*
- * -- SIGN UP FORM --
+ * -- SIGN UP/LOGIN FORM --
  */
 #sign-up {
     margin-left: auto;
@@ -36,6 +36,10 @@
 
 #form-wrapper {
     margin-left: 32%;
+}
+
+#login-form-wrapper {
+    margin-top: -475px;
 }
 
 /*
