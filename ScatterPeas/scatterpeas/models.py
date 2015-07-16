@@ -168,16 +168,15 @@ class RRule(Base):
         return session.query(RRule).filter(RRule.id == rrule_id).one().dtstart
 
     @classmethod
-    def create_rrule(cls, reminder_id=0,
+    def create_rrule(cls, reminder,
                      dtstart=datetime.utcnow(),
                      session=None):
         if session is None:
             session = DBSession
-        if reminder_id != 0:
-            instance = cls(reminder_id=reminder_id, dtstart=dtstart)
-            session.add(instance)
-            session.flush()
-            return instance
+        instance = cls(dtstart=dtstart)
+        instance.reminder = reminder
+        session.add(instance)
+        return instance
 
 
 class User(Base):
