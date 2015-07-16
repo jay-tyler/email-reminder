@@ -10,6 +10,7 @@ from scatterpeas import models
 from scatterpeas.models import User, Alias, Reminder, RRule, Job
 from datetime import datetime, timedelta
 
+
 TEST_DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql:///test_scatterpeas'
@@ -47,6 +48,7 @@ def my_user(db_session):
     kwargs['session'] = db_session
     user = models.User.create_user(**kwargs)
     return user
+
 
 @pytest.fixture()
 def setup_session(db_session):
@@ -180,7 +182,81 @@ def test_get_aliases(db_session):
     pass
 
 
+def test_reminder_create_reminder_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    past_reminders = db_session.query(Reminder).all()
+    out = Reminder.create_reminder(alias_id=aliases[3].id,
+                                   title="Here's a title",
+                                   session=db_session)
+    present_reminders = db_session.query(Reminder).all()
+    assert out is not None
+    assert len(past_reminders) + 1 == len(present_reminders)
+
+
 def test_reminder_create_reminder_no_title(db_session, setup_session):
     users, aliases, reminders = setup_session
-    Reminder.create_reminder
-    return
+    past_reminders = db_session.query(Reminder).all()
+    out = Reminder.create_reminder(alias_id=aliases[3].id,
+                                   session=db_session)
+    present_reminders = db_session.query(Reminder).all()
+    assert out is None
+    assert len(past_reminders) == len(present_reminders)
+
+
+def test_reminder_create_reminder_no_alias(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    past_reminders = db_session.query(Reminder).all()
+    out = Reminder.create_reminder(title="Here's a title",
+                                   session=db_session)
+    present_reminders = db_session.query(Reminder).all()
+    assert out is None
+    assert len(past_reminders) == len(present_reminders)
+
+
+def test_reminder_retrieve_instance_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    out = Reminder.retrieve_instance(reminders[4].id)
+    assert isinstance(out, Reminder)
+
+
+def test_reminder_retrieve_instance_invalid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    with pytest.raises(NoResultFound):
+        out = Reminder.retrieve_instance(1200)
+
+
+def test_reminder_get_next_job_exists(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    future_reminder = reminders[3]
+    out = Reminder.get_next_job(future_reminder.id)
+    assert isinstance(out, datetime)
+    assert datetime.utcnow() < out
+
+
+def test_reminder_get_next_job_absent(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    future_reminder = reminders[1]
+    out = Reminder.get_next_job(future_reminder.id)
+    assert out is None
+
+
+def test_reminder_parse_reminder_upcoming_job(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    past_jobs = db_session.query(Job).all()
+    future_reminder = reminders[3]
+    out = Reminder.parse_reminder(future_reminder.id)
+    future_jobs = db_session.query(Job).all()
+    assert future_reminder.rstate is True
+    assert len(past_jobs) + 1 == len(future_jobs)
+    assert out is not None
+
+
+def test_reminder_parse_reminder_jobs_in_past(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    past_jobs = db_session.query(Job).all()
+    past_reminder = reminders[1]
+    out = Reminder.parse_reminder(past_reminder.id)
+    future_jobs = db_session.query(Job).all()
+    assert past_reminder.rstate is False
+    assert len(past_jobs) == len(future_jobs)
+    assert out is not None
