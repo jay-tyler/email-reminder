@@ -41,14 +41,14 @@ DATABASE_URL = os.environ.get(
     'postgresql:///scatterpeas2'
 )
 
-# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
 
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(bind=engine)
-DBSession = Session()
+# engine = create_engine(DATABASE_URL, echo=True)
+# Session = sessionmaker(bind=engine)
+# DBSession = Session()
 
 
 class Reminder(Base):
@@ -344,6 +344,9 @@ class Alias(Base):
         if session is None:
             session = DBSession
         return session.query(cls).get(alias_id)
+
+    def __eq__(self, other):
+        return other.id == self.id
 
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', \

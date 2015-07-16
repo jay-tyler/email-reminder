@@ -109,9 +109,27 @@ def test_check_password_wrong_password(db_session, my_user):
 
 
 def test_check_password_valid_credentials(db_session, my_user):
-    user = my_user
-    assert models.User.check_password(user.username, 'asdf') is True
+    assert models.User.check_password(my_user.username, 'asdf') is True
 
 
-def test_get_aliases(db_session):
-    pass
+def test_get_aliases_null(db_session, my_user):
+    assert models.User.get_aliases(my_user.username) == []
+
+
+def test_get_aliases(db_session, my_user):
+    my_alias = models.Alias.create_alias(my_user.id, 'foobar@gmail.com')
+    assert models.User.get_aliases(my_user.username)[0] == my_alias
+
+
+def test_get_multiple_aliases(db_session, my_user):
+    me = models.Alias.create_alias(my_user.id, 'foobar@gmail.com')
+    my_friend = models.Alias.create_alias(my_user.id,
+                                          'friend@gmail.com',
+                                          alias='friend')
+    assert models.User.get_aliases(my_user.username)[0] == me
+    assert models.User.get_aliases(my_user.username)[1] == my_friend
+
+
+def test_get_aliases_invalid_user(db_session):
+    with pytest.raises(NoResultFound):
+        models.User.get_aliases('badusername')
