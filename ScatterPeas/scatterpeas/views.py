@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # from zope.sqlalchemy import ZopeTransactionExtension
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from pyramid.security import remember, forget
-from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
+# from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 from dateutil import parser
 import pytz
 
@@ -16,123 +16,125 @@ from .models import (
     User,
     Alias,
     UUID,
-    RRule
+    Reminder,
+    RRule,
+    Job
     )
 
 
 # this needs to be moved into models once we have them
 
 
-class User(object):
-    @property
-    def __acl__(self):
-        return [
-            (Allow, self.username, 'edit'),
-            (Allow, 'group:admin', 'edit')
-        ]
+# class User(object):
+#     @property
+#     def __acl__(self):
+#         return [
+#             (Allow, self.username, 'edit'),
+#             (Allow, 'group:admin', 'edit')
+#         ]
 
-    def __init__(self, username, password, first_name=None, last_name=None,
-                 email=None, phone=None, default_medium='email',
-                 timezone='Pacific', groups=None):
-        self.username = username
-        self.password = password
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.phone = phone
-        self.default_medium = default_medium
-        self.timezone = timezone
-        self.groups = groups or []
-
-
-class Reminder(object):
-    @property
-    def __acl__(self):
-        return [
-            (Allow, self.owner, 'edit'),
-            (Allow, 'group:admin', ALL_PERMISSIONS)
-        ]
-
-    def __init__(self, owner, title, payload, delivery_time, method='email',
-                 email=None, phone=None):
-        self.owner = owner
-        self.title = title
-        self.payload = payload
-        self.delivery_time = delivery_time
-        self.method = method
-        self.email = email
-        self.phone = phone
+#     def __init__(self, username, password, first_name=None, last_name=None,
+#                  email=None, phone=None, default_medium='email',
+#                  timezone='Pacific', groups=None):
+#         self.username = username
+#         self.password = password
+#         self.first_name = first_name
+#         self.last_name = last_name
+#         self.email = email
+#         self.phone = phone
+#         self.default_medium = default_medium
+#         self.timezone = timezone
+#         self.groups = groups or []
 
 
-class Alias(object):
-    @property
-    def __acl__(self):
-        rule_list = []
-        for user in self.users:
-            rule_list.append((Allow, user.username, 'edit'))
-        rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
-        return rule_list
+# class Reminder(object):
+#     @property
+#     def __acl__(self):
+#         return [
+#             (Allow, self.owner, 'edit'),
+#             (Allow, 'group:admin', ALL_PERMISSIONS)
+#         ]
+
+#     def __init__(self, owner, title, payload, delivery_time, method='email',
+#                  email=None, phone=None):
+#         self.owner = owner
+#         self.title = title
+#         self.payload = payload
+#         self.delivery_time = delivery_time
+#         self.method = method
+#         self.email = email
+#         self.phone = phone
 
 
-USERS = {}
-REMINDERS = {}
-USERS['user1'] = User('user1', 'password')
-USERS['user2'] = User('user2', 'password')
-USERS['admin'] = User('admin', 'password', groups=['admin'])
-REMINDERS['myreminder'] = Reminder('user1', 'myreminder', 'take out the garbage', 'a time')
-REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
+# class Alias(object):
+#     @property
+#     def __acl__(self):
+#         rule_list = []
+#         for user in self.users:
+#             rule_list.append((Allow, user.username, 'edit'))
+#         rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
+#         return rule_list
 
 
-class RootFactory(object):
-    __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS),
-        (Allow, Authenticated, 'create')
-    ]
-
-    def __init__(self, request):
-        self.request = request
-
-
-class ReminderFactory(object):
-    __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS),
-    ]
-
-    def __init__(self, request):
-        self.request = request
-
-    def __getitem__(self, title):
-        return REMINDERS[title]
+# USERS = {}
+# REMINDERS = {}
+# USERS['user1'] = User('user1', 'password')
+# USERS['user2'] = User('user2', 'password')
+# USERS['admin'] = User('admin', 'password', groups=['admin'])
+# REMINDERS['myreminder'] = Reminder('user1', 'myreminder', 'take out the garbage', 'a time')
+# REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
 
 
-class UserFactory(object):
-    __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS)
-    ]
+# class RootFactory(object):
+#     __acl__ = [
+#         (Allow, 'group:admin', ALL_PERMISSIONS),
+#         (Allow, Authenticated, 'create')
+#     ]
 
-    def __init__(self, request):
-        self.request = request
-
-    def __getitem__(self, username):
-        return User.by_username(username)
+#     def __init__(self, request):
+#         self.request = request
 
 
-class AliasFactory(object):
-    __acl__ = [
-        (Allow, 'group:admin', ALL_PERMISSIONS)
-    ]
+# class ReminderFactory(object):
+#     __acl__ = [
+#         (Allow, 'group:admin', ALL_PERMISSIONS),
+#     ]
 
-    def __init__(self, request):
-        self.request = request
+#     def __init__(self, request):
+#         self.request = request
 
-    def __getitem(self, id):
-        return Alias.by_id(id)
+#     def __getitem__(self, id):
+#         return Reminder.retrieve_instance(id)
 
 
-def groupfinder(userid, request):
-    user = USERS.get(userid)
-    if user:
-        return ['group:%s' % g for g in user.groups]
+# class UserFactory(object):
+#     __acl__ = [
+#         (Allow, 'group:admin', ALL_PERMISSIONS)
+#     ]
+
+#     def __init__(self, request):
+#         self.request = request
+
+#     def __getitem__(self, username):
+#         return User.by_username(username)
+
+
+# class AliasFactory(object):
+#     __acl__ = [
+#         (Allow, 'group:admin', ALL_PERMISSIONS)
+#     ]
+
+#     def __init__(self, request):
+#         self.request = request
+
+#     def __getitem(self, id):
+#         return Alias.by_id(id)
+
+
+# def groupfinder(username, request):
+#     user = User.by_username(username)
+#     if user:
+#         return ['group:%s' % g for g in user.groups]
 
 
 def do_login(request):

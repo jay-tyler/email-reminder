@@ -5,6 +5,7 @@ import sqlalchemy as sa
 import os
 import uuid
 from datetime import datetime, timedelta
+from pyramid.security import Allow, ALL_PERMISSIONS, Authenticated
 
 from sqlalchemy import (
     Column,
@@ -22,6 +23,7 @@ from sqlalchemy import (
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 
 from sqlalchemy.orm import (
     scoped_session,
@@ -32,8 +34,6 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
-from datetime import datetime
-from pytz import timezone
 import pytz
 
 DATABASE_URL = os.environ.get(
@@ -53,7 +53,6 @@ Base = declarative_base()
 # Base.metadata.create_all(engine)
 # Session = sessionmaker(bind=engine)
 
-<<<<<<< HEAD
 class Reminder(Base):
     """Reminder table includes payload information for reminders, and
     provides functionality for putting jobs onto the jobs table. Columns
@@ -81,6 +80,13 @@ class Reminder(Base):
     # rstate is used to to track whether a reminder is still producing jobs
     # turned to False after execution of last job
     rstate = Column(Boolean)
+
+    @property
+    def __acl__(self):
+        rule_list = []
+        for user in self.alias.users:
+            rule_list.append((Allow, user.username, 'edit'))
+        rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
 
     @classmethod
     def parse_reminder(cls, reminder_id, session=None):
@@ -200,6 +206,13 @@ class User(Base):
     #     backref=backref('users', order_by=id)
     # )
 
+    @property
+    def __acl__(self):
+        return [
+            (Allow, self.username, 'edit'),
+            (Allow, 'group:admin', 'edit')
+        ]
+
     @classmethod
     def create_user(cls, username, password, first="", last="",
                     dflt_medium=1, timezone='America/Los_Angeles',
@@ -219,7 +232,10 @@ class User(Base):
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
-        user = User.by_username(username)
+        try:
+            user = User.by_username(username)
+        except NoResultFound:
+            return False
         return manager.check(user.password, password)
 
     @classmethod
@@ -274,6 +290,14 @@ class Alias(Base):
     #     order_by='Reminder.id',
     #     backref='aliases'
     # )
+
+    @property
+    def __acl__(self):
+        rule_list = []
+        for user in self.users:
+            rule_list.append((Allow, user.username, 'edit'))
+        rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
+        return rule_list
 
     @classmethod
     def create_alias(cls, user_id, contact_info, alias=None,
@@ -432,6 +456,60 @@ class Job(Base):
         if session is None:
             session = DBSession
         return session.query(Job).filter(Job.id == job_id).one()
+
+
+class RootFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS),
+        (Allow, Authenticated, 'create')
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+
+class ReminderFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS),
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem__(self, id):
+        return Reminder.retrieve_instance(id)
+
+
+class UserFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS)
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem__(self, username):
+        return User.by_username(username)
+
+
+class AliasFactory(object):
+    __acl__ = [
+        (Allow, 'group:admin', ALL_PERMISSIONS)
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem(self, id):
+        return Alias.by_id(id)
+
+
+def groupfinder(username, request):
+    try:
+        user = User.by_username(username)
+    except NoResultFound:
+        return None
+    return ['group:%s' % g for g in user.groups]
 
 
 def init_db():

@@ -3,7 +3,7 @@ from sqlalchemy import engine_from_config
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 import os
-from views import ReminderFactory, groupfinder, RootFactory, UserFactory, AliasFactory
+from models import ReminderFactory, groupfinder, RootFactory, UserFactory, AliasFactory
 
 from .models import (
     DBSession,
