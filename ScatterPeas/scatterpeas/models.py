@@ -35,11 +35,13 @@ DATABASE_URL = os.environ.get(
     'postgresql:///scatterpeas3'
 )
 
-# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+
 Base = declarative_base()
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(bind=engine)
-DBSession = Session()
+
+# engine = create_engine(DATABASE_URL, echo=True)
+# Session = sessionmaker(bind=engine)
+# DBSession = Session()
 # engine = create_engine(DATABASE_URL, echo=True)
 # Base.metadata.create_all(engine)
 # Session = sessionmaker(bind=engine)
@@ -132,7 +134,7 @@ class User(Base):
         if session is None:
             session = DBSession
         manager = BCRYPTPasswordManager()
-        hashed = (manager.encode(password))
+        hashed = manager.encode(password)
         instance = cls(first=first, last=last, username=username,
                        password=hashed, dflt_medium=dflt_medium,
                        timezone=timezone)
@@ -322,21 +324,21 @@ class UUID(Base):
                                     self.created, self.alias_id)
 
 
-def init_db():
-    engine = create_engine(DATABASE_URL, echo=True)
-    Base.metadata.create_all(engine)
+# def init_db():
+#     engine = create_engine(DATABASE_URL, echo=True)
+#     Base.metadata.create_all(engine)
 
 
-def helper():
-    biz = User.create_user(username='bizbaz', password='asdf')
-    DBSession.add(biz)
-    DBSession.commit()
-    bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
-    DBSession.add(bizmarkie)
-    DBSession.commit()
-    buuid = UUID.create_uuid(bizmarkie.id)
-    DBSession.add(buuid)
-    DBSession.commit()
+# def helper():
+#     biz = User.create_user(username='bizbaz', password='asdf')
+#     DBSession.add(biz)
+#     DBSession.commit()
+#     bizmarkie = Alias.create_alias(biz.id, contact_info='biz@gmail.com')
+#     DBSession.add(bizmarkie)
+#     DBSession.commit()
+#     buuid = UUID.create_uuid(bizmarkie.id)
+#     DBSession.add(buuid)
+#     DBSession.commit()
 
 
 # class Jobs(Base):
