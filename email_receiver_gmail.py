@@ -8,6 +8,8 @@ def get_email():
     username = ''
     password = ''
 
+    import pdb; pdb.set_trace()
+
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(username, password)
     mail.select("inbox")
