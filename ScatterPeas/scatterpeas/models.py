@@ -168,11 +168,17 @@ class RRule(Base):
 
     @classmethod
     def create_rrule(cls, reminder_id=0,
-                     dtstart=datetime.utcnow(),
+                     dtstart=(datetime.utcnow() + timedelta(hours=24)),
                      session=None):
         if session is None:
             session = DBSession
-        if reminder_id != 0:
+        try:
+            # This try block can disappear when we refactor to use the ORM
+            # more idiomatically
+            Reminder.retrieve_instance(reminder_id)
+        except NoResultFound:
+            raise NoResultFound
+        else:
             instance = cls(reminder_id=reminder_id, dtstart=dtstart)
             session.add(instance)
             session.flush()

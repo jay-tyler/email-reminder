@@ -9,6 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from scatterpeas import models
 from scatterpeas.models import User, Alias, Reminder, RRule, Job
 from datetime import datetime, timedelta
+import psycopg2
 
 
 TEST_DATABASE_URL = os.environ.get(
@@ -260,3 +261,32 @@ def test_reminder_parse_reminder_jobs_in_past(db_session, setup_session):
     assert past_reminder.rstate is False
     assert len(past_jobs) == len(future_jobs)
     assert out is not None
+
+
+def test_rrule_get_rrules_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    reminder = reminders[0]
+    out = RRule.get_rrules(reminder.id)
+    assert isinstance(out, datetime)
+
+
+def test_rrule_get_rrules_invalid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    with pytest.raises(NoResultFound):
+        out = RRule.get_rrules(1200)
+
+
+def test_rrule_create_valid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    new_reminder = Reminder.create_reminder(alias_id=aliases[3].id,
+                                   title="Here's a title",
+                                   session=db_session)
+    now = datetime.utcnow()
+    RRule.create_rrule(new_reminder.id, now)
+
+
+def test_rrule_create_invalid(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    now = datetime.utcnow()
+    with pytest.raises(NoResultFound):
+        RRule.create_rrule(1200, now)
