@@ -471,9 +471,16 @@ class Job(Base):
     def create_job(cls, reminder_id, execution_time, session=None):
         if session is None:
             session = DBSession
-        instance = cls(reminder_id=reminder_id, execution_time=execution_time,
-                       job_state=0)
-        session.add(instance)
+        try:
+            # This try block can disappear when we refactor to use the ORM
+            # more idiomatically
+            Reminder.retrieve_instance(reminder_id)
+        except NoResultFound:
+            raise NoResultFound
+        else:
+            instance = cls(reminder_id=reminder_id,
+                           execution_time=execution_time, job_state=0)
+            session.add(instance)
         return instance
 
     @classmethod
