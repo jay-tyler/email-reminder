@@ -1,8 +1,27 @@
-<link rel="stylesheet" type="text/css" href="/static/jquery.datetimepicker.css"/ >
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script src="/static/jquery.datetimepicker.js"></script>
-<!-- <script src="/static/main.js"></script> -->
-<h1>Our Reminder System</h1>
-<p>{{ request.authenticated_userid }}</p>
-{% block body %}
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/grids-responsive-min.css">
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="/static/jquery.datetimepicker.css"/ >
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="/static/jquery.datetimepicker.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="header">
+        <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
+            <a href="{{ request.route_url('home') }}"><img id="logo" class="pure-u-1-5" src="/static/logo.png"></a>
+            <ul class="pure-menu-list">
+                <li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('login') }}" class="pure-menu-link">Login</a></li>
+            </ul>
+        </div>
+    </div>
+    {% block body %}
+    {% endblock %}
+
+</body>
+
+
