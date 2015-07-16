@@ -283,7 +283,6 @@ class Alias(Base):
     alias = Column(Unicode(100), default='ME', nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     contact_info = Column(Unicode(75), nullable=False)
-    # Medium state is 1 for email, 2 for text
     medium = Column(Integer, default=1)
     activation_state = Column(Integer, default=0)
 
@@ -320,7 +319,7 @@ class Alias(Base):
 
     @classmethod
     def retrieve_instance(cls, alias_id, session=None):
-        """Retrieves a alias instance from alias_id"""
+        """Retrieve an alias instance from alias_id"""
         if session is None:
             session = DBSession
         return session.query(Alias).filter(Alias.id == alias_id).one()
@@ -329,7 +328,7 @@ class Alias(Base):
     def activate(cls, alias_id, session=None):
         if session is None:
             session = DBSession
-        alias = session.query(cls).filter(Alias.id == alias_id).one()
+        alias = Alias.by_id(alias_id)
         alias.activation_state = 1
 
     @classmethod

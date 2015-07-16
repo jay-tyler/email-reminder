@@ -39,12 +39,30 @@ def db_session(request, connection):
 
 
 @pytest.fixture()
-def my_user(db_session):
+def user(db_session):
     kwargs = {'first': 'foo', 'last': 'bar', 'username': 'foobar',
               'password': 'asdf'}
     kwargs['session'] = db_session
     user = models.User.create_user(**kwargs)
     return user
+
+
+@pytest.fixture()
+def alias(db_session, user):
+    kwargs = {'user_id': user.id, 'contact_info': 'myalias@gmail.com'}
+    kwargs['session'] = db_session
+    alias = models.Alias.create_alias(**kwargs)
+    return alias
+
+
+@pytest.fixture()
+def active_alias(db_session, user):
+    kwargs = {'user_id': user.id,
+              'contact_info': 'myalias@gmail.com',
+              'activation_state': 1}
+    kwargs['session'] = db_session
+    alias = models.Alias.create_alias(**kwargs)
+    return alias
 
 
 def test_create_user(db_session):
@@ -87,8 +105,8 @@ def test_first_and_last_not_required(db_session):
     assert isinstance(user, models.User)
 
 
-def test_by_username(db_session, my_user):
-    expected = my_user
+def test_by_username(db_session, user):
+    expected = user
     db_session.flush()
     actual = models.User.by_username('foobar')
     assert expected == actual
@@ -103,33 +121,110 @@ def test_check_password_invalid_user(db_session):
     assert models.User.check_password('doesnotexist', 'asdf') is False
 
 
-def test_check_password_wrong_password(db_session, my_user):
-    user = my_user
+def test_check_password_wrong_password(db_session, user):
     assert models.User.check_password(user.username, 'badpassword') is False
 
 
-def test_check_password_valid_credentials(db_session, my_user):
-    assert models.User.check_password(my_user.username, 'asdf') is True
+def test_check_password_valid_credentials(db_session, user):
+    assert models.User.check_password(user.username, 'asdf') is True
 
 
-def test_get_aliases_null(db_session, my_user):
-    assert models.User.get_aliases(my_user.username) == []
+def test_get_aliases_null(db_session, user):
+    assert models.User.get_aliases(user.username) == []
 
 
-def test_get_aliases(db_session, my_user):
-    my_alias = models.Alias.create_alias(my_user.id, 'foobar@gmail.com')
-    assert models.User.get_aliases(my_user.username)[0] == my_alias
+def test_get_aliases(db_session, user):
+    my_alias = models.Alias.create_alias(user.id, 'foobar@gmail.com')
+    assert models.User.get_aliases(user.username)[0] == my_alias
 
 
-def test_get_multiple_aliases(db_session, my_user):
-    me = models.Alias.create_alias(my_user.id, 'foobar@gmail.com')
-    my_friend = models.Alias.create_alias(my_user.id,
+def test_get_multiple_aliases(db_session, user):
+    me = models.Alias.create_alias(user.id, 'foobar@gmail.com')
+    my_friend = models.Alias.create_alias(user.id,
                                           'friend@gmail.com',
                                           alias='friend')
-    assert models.User.get_aliases(my_user.username)[0] == me
-    assert models.User.get_aliases(my_user.username)[1] == my_friend
+    assert models.User.get_aliases(user.username)[0] == me
+    assert models.User.get_aliases(user.username)[1] == my_friend
 
 
 def test_get_aliases_invalid_user(db_session):
     with pytest.raises(NoResultFound):
         models.User.get_aliases('badusername')
+
+
+def test_create_alias(db_session, user):
+    kwargs = {'user_id': user.id, 'contact_info': 'myalias@gmail.com'}
+    kwargs['session'] = db_session
+    assert db_session.query(models.Alias).count() == 0
+
+    alias = models.Alias.create_alias(**kwargs)
+    assert isinstance(alias, models.Alias)
+
+    assert getattr(alias, 'id') is not None
+    assert getattr(alias, 'alias') == 'ME'
+    assert getattr(alias, 'medium') == 1
+    assert getattr(alias, 'activation_state') == 0
+
+    assert db_session.query(models.Alias).count() == 1
+    for field in kwargs:
+        if field != 'session':
+            assert getattr(alias, field) == kwargs[field]
+
+
+def test_create_alias_contact_info_not_null(db_session, user):
+    bad_data = {'user_id': user.id, 'session': db_session}
+    with pytest.raises(TypeError):
+        models.Alias.create_alias(**bad_data)
+
+
+def test_retrieve_instance(db_session, alias):
+    expected = alias
+    db_session.flush()
+    actual = models.Alias.retrieve_instance(alias.id)
+    assert expected == actual
+
+
+def test_retrieve_instance_invalid_query(db_session):
+    with pytest.raises(NoResultFound):
+        models.Alias.retrieve_instance(5)
+
+
+def test_activate(db_session, alias):
+    assert alias.activation_state == 0
+    models.Alias.activate(alias.id)
+    assert alias.activation_state == 1
+
+
+def test_activate_active_alias(db_session, active_alias):
+    assert active_alias.activation_state == 1
+    models.Alias.activate(active_alias.id)
+    assert active_alias.activation_state == 1
+
+
+def test_activate_invalid_alias(db_session):
+    assert db_session.query(models.Alias).count() == 0
+    with pytest.raises(AttributeError):
+        models.Alias.activate(5)
+
+
+def test_get_user_id(db_session, user, alias):
+    assert models.Alias.get_user_id(alias.id) == user.id
+
+
+def test_get_user_id_invalid_alias(db_session):
+    assert db_session.query(models.Alias).count() == 0
+    with pytest.raises(AttributeError):
+        models.Alias.get_user_id(5)
+
+
+def test_by_id(db_session, alias):
+    expected = alias
+    db_session.flush()
+    actual = models.Alias.by_id(alias.id)
+    assert expected == actual
+
+
+def test_by_id_invalid_query(db_session):
+    assert db_session.query(models.Alias).count() == 0
+    with pytest.raises(NoResultFound):
+        models.Alias.retrieve_instance(5)
