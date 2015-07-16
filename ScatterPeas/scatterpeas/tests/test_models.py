@@ -51,39 +51,57 @@ def my_user(db_session):
 @pytest.fixture()
 def setup_session(db_session):
     """Instantiate a session for testing objects"""
-    user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
-    user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
-    user3 = User.create_user('nick', 'nickpassword', 'nick', 'draper')
-    user4 = User.create_user('saki', 'nakedmolerats', 'saki', 'fu')
-    user5 = User.create_user('grace', 'gatitapass', 'grace', 'hata')
+    user1 = User.create_user(
+        'jaytyler', 'secretpass', 'jason', 'tyler', session=db_session)
+    user2 = User.create_user(
+        'ryty', 'othersecret', 'ryan', 'tyler', session=db_session)
+    user3 = User.create_user(
+        'nick', 'nickpassword', 'nick', 'draper', session=db_session)
+    user4 = User.create_user(
+        'saki', 'nakedmolerats', 'saki', 'fu', session=db_session)
+    user5 = User.create_user(
+        'grace', 'gatitapass', 'grace', 'hata', session=db_session)
     db_session.flush()
-    alias1 = Alias.create_alias(user1.id, "jmtyler@gmail.com", "ME", 1)
-    alias2 = Alias.create_alias(user1.id, "206-659-4510", "ME", 2)
-    alias3 = Alias.create_alias(user2.id, "ryanty@gmail.com", "ME", 1)
-    alias4 = Alias.create_alias(user3.id, "nickemail@email.com", "ME", 1)
-    alias5 = Alias.create_alias(user4.id, "sakiemail@email.com", "ME", 1)
-    alias6 = Alias.create_alias(user5.id, "graceemail@email.com", "ME", 1)
+    alias1 = Alias.create_alias(
+        user1.id, "jmtyler@gmail.com", "ME", 1, session=db_session)
+    alias2 = Alias.create_alias(
+        user1.id, "206-659-4510", "ME", 2, session=db_session)
+    alias3 = Alias.create_alias(
+        user2.id, "ryanty@gmail.com", "ME", 1, session=db_session)
+    alias4 = Alias.create_alias(
+        user3.id, "nickemail@email.com", "ME", 1, session=db_session)
+    alias5 = Alias.create_alias(
+        user4.id, "sakiemail@email.com", "ME", 1, session=db_session)
+    alias6 = Alias.create_alias(
+        user5.id, "graceemail@email.com", "ME", 1, session=db_session)
     db_session.flush()
-    reminder1 = Reminder.create_reminder(alias1.id, "Here's an email to send to \
-                                         Jason's email")
-    reminder2 = Reminder.create_reminder(alias2.id, "Heres a text to send to \
-                                         Jason's phone")
+    reminder1 = Reminder.create_reminder(
+        alias1.id, "Here's an email to send to Jason's email",
+        session=db_session)
+    reminder2 = Reminder.create_reminder(alias2.id,
+        "Heres a text to send to Jason's phone", session=db_session)
     reminder3 = Reminder.create_reminder(alias3.id,
-                                         "Here's a email to send to Ryan")
+        "Here's a email to send to Ryan", session=db_session)
     reminder4 = Reminder.create_reminder(alias4.id,
-                                         "Here's an email to send to Nick")
+        "Here's an email to send to Nick", session=db_session)
     reminder5 = Reminder.create_reminder(alias5.id,
-                                         "Here's an email to send to Saki")
+        "Here's an email to send to Saki", session=db_session)
     reminder6 = Reminder.create_reminder(alias6.id,
-                                         "Here's an email to send to Grace")
+        "Here's an email to send to Grace", session=db_session)
     db_session.flush()
     now = datetime.utcnow()
-    rrule1 = RRule.create_rrule(reminder1.id, now + timedelta(hours=-2))
-    rrule2 = RRule.create_rrule(reminder2.id, now + timedelta(hours=-1))
-    rrule3 = RRule.create_rrule(reminder3.id, now + timedelta(hours=0))
-    rrule4 = RRule.create_rrule(reminder4.id, now + timedelta(hours=1))
-    rrule5 = RRule.create_rrule(reminder5.id, now + timedelta(hours=2))
-    rrule6 = RRule.create_rrule(reminder6.id, now + timedelta(hours=3))
+    rrule1 = RRule.create_rrule(reminder1.id, now + timedelta(hours=-2),
+                                session=db_session)
+    rrule2 = RRule.create_rrule(reminder2.id, now + timedelta(hours=-1),
+                                session=db_session)
+    rrule3 = RRule.create_rrule(reminder3.id, now + timedelta(hours=0),
+                                session=db_session)
+    rrule4 = RRule.create_rrule(reminder4.id, now + timedelta(hours=1),
+                                session=db_session)
+    rrule5 = RRule.create_rrule(reminder5.id, now + timedelta(hours=2),
+                                session=db_session)
+    rrule6 = RRule.create_rrule(reminder6.id, now + timedelta(hours=3),
+                                session=db_session)
     db_session.flush()
     users = [user1, user2, user3, user4, user5]
     aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
@@ -162,6 +180,7 @@ def test_get_aliases(db_session):
     pass
 
 
-def test_reminder_create_reminder(db_session, setup_session):
+def test_reminder_create_reminder_no_title(db_session, setup_session):
     users, aliases, reminders = setup_session
+    Reminder.create_reminder
     return
