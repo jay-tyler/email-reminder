@@ -7,6 +7,8 @@ from pyramid import testing
 from sqlalchemy.orm.exc import NoResultFound
 
 from scatterpeas import models
+from scatterpeas.models import User, Alias, Reminder, RRule, Job
+from datetime import datetime, timedelta
 
 TEST_DATABASE_URL = os.environ.get(
     'DATABASE_URL',
@@ -45,6 +47,49 @@ def my_user(db_session):
     kwargs['session'] = db_session
     user = models.User.create_user(**kwargs)
     return user
+
+@pytest.fixture()
+def setup_session(db_session):
+    """Instantiate a session for testing objects"""
+    user1 = User.create_user('jaytyler', 'secretpass', 'jason', 'tyler')
+    user2 = User.create_user('ryty', 'othersecret', 'ryan', 'tyler')
+    user3 = User.create_user('nick', 'nickpassword', 'nick', 'draper')
+    user4 = User.create_user('saki', 'nakedmolerats', 'saki', 'fu')
+    user5 = User.create_user('grace', 'gatitapass', 'grace', 'hata')
+    db_session.flush()
+    alias1 = Alias.create_alias(user1.id, "jmtyler@gmail.com", "ME", 1)
+    alias2 = Alias.create_alias(user1.id, "206-659-4510", "ME", 2)
+    alias3 = Alias.create_alias(user2.id, "ryanty@gmail.com", "ME", 1)
+    alias4 = Alias.create_alias(user3.id, "nickemail@email.com", "ME", 1)
+    alias5 = Alias.create_alias(user4.id, "sakiemail@email.com", "ME", 1)
+    alias6 = Alias.create_alias(user5.id, "graceemail@email.com", "ME", 1)
+    db_session.flush()
+    reminder1 = Reminder.create_reminder(alias1.id, "Here's an email to send to \
+                                         Jason's email")
+    reminder2 = Reminder.create_reminder(alias2.id, "Heres a text to send to \
+                                         Jason's phone")
+    reminder3 = Reminder.create_reminder(alias3.id,
+                                         "Here's a email to send to Ryan")
+    reminder4 = Reminder.create_reminder(alias4.id,
+                                         "Here's an email to send to Nick")
+    reminder5 = Reminder.create_reminder(alias5.id,
+                                         "Here's an email to send to Saki")
+    reminder6 = Reminder.create_reminder(alias6.id,
+                                         "Here's an email to send to Grace")
+    db_session.flush()
+    now = datetime.utcnow()
+    rrule1 = RRule.create_rrule(reminder1.id, now + timedelta(hours=-2))
+    rrule2 = RRule.create_rrule(reminder2.id, now + timedelta(hours=-1))
+    rrule3 = RRule.create_rrule(reminder3.id, now + timedelta(hours=0))
+    rrule4 = RRule.create_rrule(reminder4.id, now + timedelta(hours=1))
+    rrule5 = RRule.create_rrule(reminder5.id, now + timedelta(hours=2))
+    rrule6 = RRule.create_rrule(reminder6.id, now + timedelta(hours=3))
+    db_session.flush()
+    users = [user1, user2, user3, user4, user5]
+    aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
+    reminders = [reminder1, reminder2, reminder3, reminder4, reminder5,
+                 reminder6]
+    return (users, aliases, reminders)
 
 
 def test_create_user(db_session):
@@ -115,3 +160,8 @@ def test_check_password_valid_credentials(db_session, my_user):
 
 def test_get_aliases(db_session):
     pass
+
+
+def test_reminder_create_reminder(db_session, setup_session):
+    users, aliases, reminders = setup_session
+    return
