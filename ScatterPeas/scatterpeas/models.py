@@ -34,21 +34,20 @@ from sqlalchemy.orm import (
 
 from cryptacular.bcrypt import BCRYPTPasswordManager
 from zope.sqlalchemy import ZopeTransactionExtension
-import pytz
 
 DATABASE_URL = os.environ.get(
     'DATABASE_URL',
     'postgresql:///scatterpeas2'
 )
 
-# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 
 Base = declarative_base()
 
 
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(bind=engine)
-DBSession = Session()
+# engine = create_engine(DATABASE_URL, echo=True)
+# Session = sessionmaker(bind=engine)
+# DBSession = Session()
 
 
 class Reminder(Base):
