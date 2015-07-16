@@ -47,13 +47,26 @@ DBSession = Session()
 
 
 class Reminder(Base):
+    """Reminder table includes payload information for reminders, and
+    provides functionality for putting jobs onto the jobs table. Columns
+    include:
+    -id
+    -alias_id: ForeignKey to Alias table
+    -title: Short version of reminder; required
+    -text_payload: To include as email body, optional
+    -media_payload: For including pictures etc. Not yet fully implemented.
+    -rstate: Tracks whether Reminder has pending jobs. True for active.
+    """
 
     __tablename__ = 'reminders'
+    aliases = relationship("Alias", backref="reminder")
+    rrule = relationship("RRule", backref="reminders", uselist=False)
+
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     alias_id = Column(Integer, ForeignKey('aliases.id'), nullable=False)
     # keeps the rrule currently generating jobs
-    rrule_id = Column(Integer, ForeignKey('rrules.id'))
+    # rrule_id = Column(Integer, ForeignKey('rrules.id'))
     title = Column(Unicode(256), nullable=False)
     text_payload = Column(Unicode(20000))
     # this might end up just being a link to a static resourc; we will see
@@ -64,6 +77,9 @@ class Reminder(Base):
 
     @classmethod
     def parse_reminder(cls, reminder_id, session=None):
+        """Takes a reminder and returns the reminder information needed
+        to parse a reminder into a text or email. Also checks for pending jobs,
+        instantiates them. Flips rstate to False if current call is the last"""
         if session is None:
             session = DBSession
         next_job = cls.get_next_job(reminder_id)
@@ -80,6 +96,7 @@ class Reminder(Base):
 
     @classmethod
     def retrieve_instance(cls, reminder_id, session=None):
+        """Retrieves a reminder instance from reminder_id"""
         if session is None:
             session = DBSession
         return session.query(Reminder).filter(Reminder.id == reminder_id).one()
@@ -92,9 +109,8 @@ class Reminder(Base):
         no next job."""
         if session is None:
             session = DBSession
-        rrule_id = session.query(cls).filter(
-                    cls.id == reminder_id).one().rrule_id
-        dtstart = RRule.get_rrules(rrule_id)
+        reminder = cls.retrieve_instance(reminder_id)
+        dtstart = RRule.get_rrules(reminder.rrule.id)
         rrule_gen = rrule(0, dtstart=dtstart, count=1)
         now = datetime.utcnow().replace(tzinfo=pytz.utc)
         next_job = rrule_gen.after(now)
@@ -107,14 +123,14 @@ class Reminder(Base):
     def create_reminder(cls, alias_id=0, title="",
                         text_payload="", media_payload="",
                         rstate=True, session=None):
+        '''Instantiates a Reminder instance. An RRule object is required
+        for the Reminder. We currently require any parent function to
+        attach an rrule_id to the Reminder after instantiation; the
+        Reminder object is not valid without this
+        '''
         if session is None:
             session = DBSession
         if title != "" and alias_id != 0:
-            '''Reminder instance is created, but may not potentially have
-            all necessary attributes including rrule_id. It is the parent
-            function's responsibility to provide
-            these.
-            '''
             instance = cls(title=title, alias_id=alias_id,
                            text_payload=text_payload,
                            media_payload=media_payload, rstate=rstate)
@@ -127,6 +143,8 @@ class RRule(Base):
     class is not yet fully implemented, but stands in for future
     expandability"""
     __tablename__ = 'rrules'
+
+
     # constrain this to primary key of reminders
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
@@ -228,6 +246,13 @@ class Alias(Base):
         session.add(instance)
         return instance
 
+    @classmethod
+    def retrieve_instance(cls, alias_id, session=None):
+        """Retrieves a alias instance from alias_id"""
+        if session is None:
+            session = DBSession
+        return session.query(Alias).filter(Alias.id == alias_id).one()
+
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', user_id='%s')>" % (self.alias, self.contact_info, self.activation_state, self.user_id)
 
@@ -269,6 +294,7 @@ class UUID(Base):
 
 
 class Job(Base):
+    """Job table contains jobs that will be sent out"""
     __tablename__ = 'jobs'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     reminder_id = Column(Integer, ForeignKey('reminders.id'))
@@ -293,6 +319,7 @@ class Job(Base):
             session = DBSession
         return session.query(Job).filter(Job.id == job_id).one()
 
+
 def init_db():
     engine = sa.create_engine(DATABASE_URL, echo=False)
     Base.metadata.create_all(engine)
@@ -309,7 +336,7 @@ def helper():
     DBSession.commit()
     rrule1 = RRule.create_rrule(1, datetime(2015, 7, 16, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
     DBSession.commit()
-    rrule_id = rrule1.id
-    reminder1.rrule_id = rrule_id
+    # rrule_id = rrule1.id
+    # reminder1.rrule_id = rrule_id
     DBSession.commit()
     return
