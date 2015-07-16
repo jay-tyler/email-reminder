@@ -1,4 +1,47 @@
 {% extends "base.jinja2" %}
+{% block menu %}
+<li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('login') }}" class="pure-menu-link">Login</a></li>
+{% endblock %}
 {% block body %}
-<h2>Hello World</h2>
+<div class="splash-container">
+    <div class="splash">
+        <h1 class="splash-head">Scatter Peas</h1>
+        <p class="splash-subhead">
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+        </p>
+        <p>
+            <a href="#get-started" class="pure-button pure-button-primary">Get Started</a>
+        </p>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div class="content">
+        <h2 id="sign-up-title" class="content-head is-center">Sign up</h2>
+        <div class="pure-g">
+            <div id="get-started" class="l-box-lrg pure-u-1 pure-u-md-2-5">
+                <form id="sign-up" class="pure-form pure-form-stacked">
+                    <fieldset>
+                        <label for="name">First Name</label>
+                        <input id="first_name" type="text" placeholder="Your First Name">
+
+                        <label for="name">Last Name</label>
+                        <input id="last_name" type="text" placeholder="Your Last Name">
+
+
+                        <label for="email">Email</label>
+                        <input id="email" type="email" placeholder="Your Email">
+
+                        <label for="password">Password</label>
+                        <input id="password" type="password" placeholder="Your Password">
+
+                        <button id="sign-up-button" type="submit" class="pure-button">Sign Up</button>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="footer l-box is-center">
+        Created in the Code Fellows' Python Development Accelerator.
+    </div>
+
 {% endblock %}
