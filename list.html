@@ -15,7 +15,7 @@
         <a href="index.html"><img id="logo" class="pure-u-1-5" src="img/logo.png"></a>
         <ul class="pure-menu-list">
             <!-- <li class="home-menu-link pure-menu-item pure-menu-selected"><a href="#" class="pure-menu-link">Home</a></li> -->
-            <li id="sign-up" class="home-menu-link pure-menu-item"><a href="" class="pure-menu-link">New Reminder</a></li>
+            <li id="sign-up" class="home-menu-link pure-menu-item"><a href="create_reminder.html" class="pure-menu-link">New Reminder</a></li>
             <li id="sign-up" class="home-menu-link pure-menu-item"><a href="" class="pure-menu-link">Settings</a></li>
             <li id="sign-up" class="home-menu-link pure-menu-item"><a href="index.html#sign-up" class="pure-menu-link">Logout</a></li>
             
@@ -24,39 +24,40 @@
 </div>
 <div class="content-wrapper">
     <div id='login-form-wrapper' class="content">
-        <h2 id="sign-up-title" class="content-head is-center">My Reminders</h2>
         <div class="pure-g">
-            <div id="form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-1-2">
-                <table class="pure-table pure-table-horizontal">
+            
+            <div id="reminder-wrapper" class="l-box-lrg pure-u-1 pure-u-md-1">
+                <h2 class="content-head">My Reminders</h2>
+                <table id="reminder-list" class="pure-table pure-table-horizontal">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Make</th>
-                            <th>Model</th>
-                            <th>Year</th>
+                            <th>Reminder</th>
+                            <th>Text</th>
+                            <th>Delivery Date</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         <tr>
                             <td>1</td>
-                            <td>Honda</td>
-                            <td>Accord</td>
-                            <td>2009</td>
+                            <td><a href="edit_reminder.html">Buy birthday gift for Sam</a></td>
+                            <td>Gift ideas</td>
+                            <td>Wednesday</td>
                         </tr>
 
                         <tr>
                             <td>2</td>
-                            <td>Toyota</td>
-                            <td>Camry</td>
-                            <td>2012</td>
+                            <td>Print tickets</td>
+                            <td>Payload</td>
+                            <td>5 PM</td>
                         </tr>
 
                         <tr>
                             <td>3</td>
-                            <td>Hyundai</td>
-                            <td>Elantra</td>
-                            <td>2010</td>
+                            <td>Call Grandma</td>
+                            <td>Payload</td>
+                            <td>Tomorrow</td>
                         </tr>
                     </tbody>
                 </table>

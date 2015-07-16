@@ -40,7 +40,8 @@
 }
 
 #login-form-wrapper {
-    margin-top: -425px;
+    margin-top: -400px;
+    padding-top: 0;
 }
 
 #new-reminder-form-wrapper {
@@ -62,6 +63,18 @@
 
  #payload {
     width: 100%;
+ }
+
+ /*
+ * -- Reminder List --
+ */
+
+ #reminder-list {
+    width: 100%;
+ }
+
+ #reminder-wrapper {
+    margin-top: 0;
  }
 
 /*
@@ -272,7 +285,8 @@ a.pure-button-primary {
 .content-head {
     font-weight: 400;
     letter-spacing: 0.1em;
-    margin: 2em 0 1em;
+/*    margin-bottom: 1em;*/
+/*    margin: 2em 0 1em;*/
 }
 
 /* This is a modifier class used when the content-head is inside a ribbon */
