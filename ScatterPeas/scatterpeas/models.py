@@ -35,11 +35,11 @@ DATABASE_URL = os.environ.get(
     'postgresql:///scatterpeas3'
 )
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+# DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
-# engine = create_engine(DATABASE_URL, echo=True)
-# Session = sessionmaker(bind=engine)
-# DBSession = Session()
+engine = create_engine(DATABASE_URL, echo=True)
+Session = sessionmaker(bind=engine)
+DBSession = Session()
 # engine = create_engine(DATABASE_URL, echo=True)
 # Base.metadata.create_all(engine)
 # Session = sessionmaker(bind=engine)
@@ -140,10 +140,19 @@ class User(Base):
         return instance
 
     @classmethod
-    def check_password(cls, username, password):
+    def check_password(cls, username, password, session=None):
+        if session is None:
+            session = DBSession
         manager = BCRYPTPasswordManager()
         user = User.by_username(username)
         return manager.check(user.password, password)
+
+    @classmethod
+    def get_aliases(cls, username, session=None):
+        if session is None:
+            session = DBSession
+        user = User.by_username(username)
+        return user.aliases
 
     @classmethod
     def by_username(cls, username, session=None):
@@ -206,6 +215,19 @@ class Alias(Base):
             session = DBSession
         alias = session.query(cls).filter(Alias.id == alias_id).one()
         alias.activation_state = 1
+
+    @classmethod
+    def get_user_id(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        alias = Alias.by_id(alias_id)
+        return alias.user_id
+
+    @classmethod
+    def by_id(cls, alias_id, session=None):
+        if session is None:
+            session = DBSession
+        return session.query(cls).get(alias_id)
 
     def __repr__(self):
         return "<Alias(name='%s', contact='%s', c_state='%s', \
