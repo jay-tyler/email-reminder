@@ -3,8 +3,8 @@ from twilio.rest import TwilioRestClient
 
 
 def send_sms(body, tonum, fromnum, media_url=None):
-    account_sid = "AC82fab74047ef173da0a573a020858a59"
-    auth_token = "225d8e3bf9d05b8ef70873e3fdeb900e"
+    account_sid = ""
+    auth_token = ""
     try:
         client = TwilioRestClient(account_sid, auth_token)
         message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum), media_url='{}'.format(media_url))
@@ -20,5 +20,5 @@ def receive_sms():
 
 
 if __name__ == '__main__':
-    send_sms('hellopea', '+17863009899', '+16319564194', 'https://theinfinitevariety.files.wordpress.com/2010/11/47nakedmolerat.jpg')
+    send_sms('hellopea', '+12069542208', '+16319564194', 'https://theinfinitevariety.files.wordpress.com/2010/11/47nakedmolerat.jpg')
     # receive_sms()
