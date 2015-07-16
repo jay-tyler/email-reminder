@@ -471,15 +471,32 @@ def helper():
     DBSession.commit()
     alias1 = Alias.create_alias(1, "jmtyler@gmail.com", "ME", 1)
     alias2 = Alias.create_alias(1, "206-679-9510", "ME", 2)
+    alias3 = Alias.create_alias(2, "theryty@gmail.com", 1)
+    alias4 = Alias.create_alias(3, "nickemail@email.com", 1)
+    alias5 = Alias.create_alias(4, "sakiemail@email.com", 1)
+    alias6 = Alias.create_alias(5, "graceemail@email.com", 1)
     DBSession.commit()
-    reminder1 = Reminder.create_reminder(1, "Here's an email to send to one")
+    reminder1 = Reminder.create_reminder(1, "Here's an email to send to \
+                                         Jason's email")
+    reminder2 = Reminder.create_reminder(2, "Heres a text to send to \
+                                         Jason's phone")
+    reminder3 = Reminder.create_reminder(3, "Here's a email to send to Ryan")
+    reminder4 = Reminder.create_reminder(4, "Here's an email to send to Nick")
+    reminder5 = Reminder.create_reminder(5, "Here's an email to send to Saki")
+    reminder6 = Reminder.create_reminder(6, "Here's an email to send to Grace")
     DBSession.commit()
-    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1, tzinfo=pytz.timezone('America/Los_Angeles')))
+    rrule1 = RRule.create_rrule(1, datetime(2015, 7, 14, 1))
+    rrule2 = RRule.create_rrule(2, datetime(2015, 7, 19, 1))
+    rrule3 = RRule.create_rrule(3, datetime(2015, 7, 13, 1))
+    rrule4 = RRule.create_rrule(4, datetime(2015, 7, 21, 1))
+    rrule5 = RRule.create_rrule(5, datetime(2015, 7, 16, 1))
+    rrule6 = RRule.create_rrule(6, datetime(2015, 7, 16, 10))
     DBSession.commit()
-    # rrule_id = rrule1.id
-    # reminder1.rrule_id = rrule_id
-    DBSession.commit()
-    return
+    users = [user1, user2, user3, user4, user5]
+    aliases = [alias1, alias2, alias3, alias4, alias5, alias6]
+    reminders = [reminder1, reminder2, reminder3, reminder4, reminder5,
+                 reminder6]
+    return (users, aliases, reminders)
 
 
 def init_db():
