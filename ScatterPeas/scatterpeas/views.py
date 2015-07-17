@@ -224,8 +224,6 @@ def create_reminder(request):
         payload = request.params.get('payload')
         delivery_time = request.params.get('delivery_time')
         naive_dt = convert_to_naive_utc(delivery_time)
-        if naive_dt < datetime.datetime.utcnow():
-            raise ValueError('That reminder is in the past.')
         reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
         delivery_time = request.params.get('delivery_time')
