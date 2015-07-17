@@ -1,0 +1,13 @@
+{% extends "base.jinja2" %}
+
+{% block menu %}
+<li id="sign-up" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('logout') }}" class="pure-menu-link">Logout</a></li>
+{% endblock %}
+
+{% block body %}
+<div class="content-wrapper">
+    <div id='login-form-wrapper' class="content">
+        <h3 id="confirmation-message" class="content-head is-center">{{ message }}</h2>
+    </div>
+</div>
+{% endblock %}

@@ -27,17 +27,17 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, attachment
     msg.attach(part1)
     msg.attach(part2)
 
-    username = ''
-    password = ''
+    sender_username = 'scatterpeas'
+    sender_password = 'peapassword'
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
-    server.login(username, password)
+    server.login(sender_username, sender_password)
     server.sendmail(fromaddr, toaddrs, msg.as_string())
     server.quit()
 
 if __name__ == '__main__':
-    fromaddr = ''
-    toaddrs = ''
+    fromaddr = 'scatterpeas@gmail.com'
+    toaddrs = 'scatterpeas@gmail.com'
     subject = 'Greeting'
     text = "This is text \n Hi!\nHow are you?\nI'm a scattered pea.\nhttps://www.youtube.com/watch?v=jHm0jmg-sbc"
     html = """

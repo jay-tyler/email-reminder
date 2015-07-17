@@ -13,8 +13,13 @@ from pyramid.scripts.common import parse_vars
 
 from ..models import (
     DBSession,
-    MyModel,
     Base,
+    Reminder,
+    RRule,
+    User,
+    Alias,
+    UUID,
+    Job,
     )
 
 
@@ -35,6 +40,3 @@ def main(argv=sys.argv):
     engine = engine_from_config(settings, 'sqlalchemy.')
     DBSession.configure(bind=engine)
     Base.metadata.create_all(engine)
-    with transaction.manager:
-        model = MyModel(name='one', value=1)
-        DBSession.add(model)

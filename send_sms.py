@@ -2,22 +2,19 @@ import twilio
 from twilio.rest import TwilioRestClient
 
 
-def send_sms(body, tonum, fromnum):
+def send_sms(body, tonum, fromnum, media_url=None):
     account_sid = ""
     auth_token = ""
     client = TwilioRestClient(account_sid, auth_token)
-    message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum))
+    message = client.messages.create(body='{}'.format(body), to='{}'.format(tonum), from_='{}'.format(fromnum), media_url='{}'.format(media_url))
     print message.sid
-    # try:
-    #     client = twilio.rest.TwilioRestClient(account_sid, auth_token)
-    #     message = client.messages.create(
-    #         body="Hello World",
-    #         to="+14159352345",
-    #         from_="+14158141829"
-    #     )
-    # except twilio.TwilioRestException as e:
-    #     print e
+
+
+def receive_sms():
+    client = TwilioRestClient(account_sid, auth_token)
+    for message in client.messages.list():
+        print message.body
+
 
 if __name__ == '__main__':
-    send_sms('hellopea', 'tonumber', 'fromnumber')
-
+    send_sms('hellopea', '+1111111111', '+16319564194', 'https://theinfinitevariety.files.wordpress.com/2010/11/47nakedmolerat.jpg')
