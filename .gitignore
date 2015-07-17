@@ -56,3 +56,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+*gmail_creds.txt
+*twilio_creds.txt

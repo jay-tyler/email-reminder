@@ -1,0 +1,58 @@
+{% extends "base.jinja2" %}
+{% block menu %}
+    {% if not request.authenticated_userid %}
+        <li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('login') }}" class="pure-menu-link">Login</a></li>
+    {% else %}
+        <li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('logout') }}" class="pure-menu-link">Logout</a></li>
+        <li id="login" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('list') }}" class="pure-menu-link">My Reminders</a></li>
+    {% endif %}
+{% endblock %}
+{% block body %}
+<div class="splash-container">
+    <div class="splash">
+        <h1 class="splash-head">Scatter Peas</h1>
+        <p class="splash-subhead">
+            The pod for all of your scattered peas.
+        </p>
+        <p id="splash-button">
+            <a href="#sign-up" class="pure-button pure-button-primary">Get Started</a>
+        </p>
+    </div>
+</div>
+<div class="content-wrapper">
+    <div id="sign-up" class="content">
+        <h2 id="sign-up-title" class="content-head is-center">Sign up</h2>
+        <div class="pure-g">
+            <div id="get-started" class="l-box-lrg pure-u-1 pure-u-md-2-5">
+            {% if error -%}
+                <p class="error"><strong>Error</strong>: {{ error }}</p>
+            {%- endif %}
+                <form action="{{ request.route_url('create_user') }}" method="POST"  id="sign-up-form" class="pure-form pure-form-stacked">
+                    <fieldset>
+                        <label for="username">Username</label>
+                        <input id="username" type="text" name="username" placeholder="Username">
+                        
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" placeholder="Your Password">
+                        
+                        <label for="first_name">First Name</label>
+                        <input id="first_name" name="first_name" type="text" placeholder="Your First Name">
+
+                        <label for="last_name">Last Name</label>
+                        <input id="last_name" name="last_name" type="text" placeholder="Your Last Name">
+
+
+                        <label for="email">Email Address or Phone</label>
+                        <input id="contact_info" name="contact_info" type="text" placeholder="jane@company.com or 1234567890">
+
+                        <button id="CUButton" type="submit" name="submit" class="pure-button">Sign Up</button>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="footer l-box is-center">
+        Created in the Code Fellows' Python Development Accelerator.
+    </div>
+
+{% endblock %}

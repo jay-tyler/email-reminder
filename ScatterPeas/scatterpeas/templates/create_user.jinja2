@@ -1,0 +1,39 @@
+{% extends "base.jinja2" %}
+{% block body %}
+<p>{{ error }}</p>
+<form action="{{ request.route_url('create_user') }}" method="POST" class="add_entry">
+    <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username"/>
+    </div>
+    <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"/>
+    </div>
+    <div class="field">
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name"/>
+    </div>
+    <div class="field">
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name"/>
+    </div>
+    <div class="field">
+        <label for="email">Email Address or Phone (1234567890)</label>
+        <input type="text" id="contact_info" name="contact_info"/>
+    </div>
+    <div class="field">
+        <p>Contact type: </p>
+        <select name="default_medium">
+            <option value="1">E-mail</option>
+            <option value="2">Text Message</option>
+        </select>
+    </div>
+    <div class="control_row">
+        <input id="CUButton" type="submit" value="Submit" name="submit"/>
+    </div>
+</form>
+<script type="text/javascript">
+$("#datetimepicker").datetimepicker();
+</script>
+{% endblock %}
