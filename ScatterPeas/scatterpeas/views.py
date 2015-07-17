@@ -198,6 +198,7 @@ def list_reminders(request):
     for alias in aliases:
         for reminder in alias.reminders:
             reminders.append(reminder)
+    reminders = reversed(reminders)
     return {'reminders': reminders}
 
 
