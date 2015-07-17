@@ -273,7 +273,7 @@ def send_confirmation_text(uuid, contact_info):
     scripts.send_sms.send_sms(msg, '+1{}'.format(contact_info), '+16319564194')
 
 
-@view_config(route_name='create_user', renderer='templates/create_user.jinja2')
+@view_config(route_name='create_user', renderer='templates/home.jinja2')
 def create_user(request):
     error = ''
     if request.method == 'POST':
@@ -282,7 +282,11 @@ def create_user(request):
         first_name = request.params.get('first_name')
         last_name = request.params.get('last_name')
         contact_info = request.params.get('contact_info')
-        default_medium = int(request.params.get('default_medium'))
+        default_medium = None
+        if contact_info.isdigit():
+            default_medium = 2
+        else:
+            default_medium = 1
         timezone = 'US/Pacific'
         try:
             user = User.create_user(username=username, password=password,
@@ -309,7 +313,7 @@ def create_user(request):
         UUID.email_sent(alias.id)
         return HTTPFound(request.route_url('wait_for_confirmation'))
     else:
-        return {'error': error}
+        return {}
 
 
 @view_config(route_name='wait_for_confirmation', renderer='templates/wait_for_confirmation.jinja2')
