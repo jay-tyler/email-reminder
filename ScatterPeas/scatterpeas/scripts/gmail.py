@@ -13,14 +13,15 @@ with open(os.path.join(HERE, 'gmail_creds.txt'), 'r') as fh:
     password = fh.readline()
 
 
-def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
+def send(fromaddr, toaddrs, subject='no subject', text='', html=None, attachment=None):
     msg = MIMEMultipart('mixed')
+    msg.set_charset("utf-8")
     msg['Subject'] = subject
     msg['From'] = fromaddr
     msg['To'] = toaddrs
 
-    if img is not None:
-        fp = open(img, 'rb')
+    if attachment is not None:
+        fp = open(attachment, 'rb')
         part3 = MIMEImage(fp.read())
         fp.close()
         msg.attach(part3)
@@ -35,7 +36,7 @@ def send(fromaddr, toaddrs, subject='no subject', text='', html=None, img=None):
 
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
-    server.login(username, password)
+    server.login(sender_username, sender_password)
     server.sendmail(fromaddr, toaddrs, msg.as_string())
     server.quit()
 
@@ -47,7 +48,7 @@ def receive():
     mail.list()
     mail.select("inbox")
 
-    result, data = mail.uid('search', None, "ALL")
+    result, data = mail.uid('search', None, '(UNSEEN)')
     latest_email_uid = data[0].split()[-1]
     result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
     raw_email = data[0][1]
