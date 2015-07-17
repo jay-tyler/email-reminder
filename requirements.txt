@@ -8,7 +8,6 @@ ecdsa==0.13
 Fabric==1.10.2
 Jinja2==2.7.3
 Mako==1.0.1
-MarkupSafe==0.23
 paramiko==1.15.2
 PasteDeploy==1.5.2
 pbkdf2==1.3
