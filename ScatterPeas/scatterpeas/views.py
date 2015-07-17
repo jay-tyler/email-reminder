@@ -304,7 +304,7 @@ def detail_alias(request):
 @view_config(route_name='send_scheduled_mail', renderer='string')
 def send_scheduled_mail(request):
     # query the database for scheduled jobs < cronjob interval
-    jobs = Job.todo(5)
+    jobs = Job.todo(1)
     message = "All jobs done.\n"
     for job in jobs:
         if job.job_state == 1:
