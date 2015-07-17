@@ -30,115 +30,6 @@ with open(os.path.join(HERE, 'scripts/gmail_creds.txt'), 'r') as fh:
     our_email = fh.readline()
 
 
-# this needs to be moved into models once we have them
-
-
-# class User(object):
-#     @property
-#     def __acl__(self):
-#         return [
-#             (Allow, self.username, 'edit'),
-#             (Allow, 'group:admin', 'edit')
-#         ]
-
-#     def __init__(self, username, password, first_name=None, last_name=None,
-#                  email=None, phone=None, default_medium='email',
-#                  timezone='Pacific', groups=None):
-#         self.username = username
-#         self.password = password
-#         self.first_name = first_name
-#         self.last_name = last_name
-#         self.email = email
-#         self.phone = phone
-#         self.default_medium = default_medium
-#         self.timezone = timezone
-#         self.groups = groups or []
-
-
-# class Reminder(object):
-#     @property
-#     def __acl__(self):
-#         return [
-#             (Allow, self.owner, 'edit'),
-#             (Allow, 'group:admin', ALL_PERMISSIONS)
-#         ]
-
-#     def __init__(self, owner, title, payload, delivery_time, method='email',
-#                  email=None, phone=None):
-#         self.owner = owner
-#         self.title = title
-#         self.payload = payload
-#         self.delivery_time = delivery_time
-#         self.method = method
-#         self.email = email
-#         self.phone = phone
-
-
-# class Alias(object):
-#     @property
-#     def __acl__(self):
-#         rule_list = []
-#         for user in self.users:
-#             rule_list.append((Allow, user.username, 'edit'))
-#         rule_list.append((Allow, 'group:admin', ALL_PERMISSIONS))
-#         return rule_list
-
-
-# USERS = {}
-# REMINDERS = {}
-# USERS['user1'] = User('user1', 'password')
-# USERS['user2'] = User('user2', 'password')
-# USERS['admin'] = User('admin', 'password', groups=['admin'])
-# REMINDERS['myreminder'] = Reminder('user1', 'myreminder', 'take out the garbage', 'a time')
-# REMINDERS['reminder2'] = Reminder('user2', 'reminder2', 'feed the cat', 'time2')
-
-
-# class RootFactory(object):
-#     __acl__ = [
-#         (Allow, 'group:admin', ALL_PERMISSIONS),
-#         (Allow, Authenticated, 'create')
-#     ]
-
-#     def __init__(self, request):
-#         self.request = request
-
-
-# class ReminderFactory(object):
-#     __acl__ = [
-#         (Allow, 'group:admin', ALL_PERMISSIONS),
-#     ]
-
-#     def __init__(self, request):
-#         self.request = request
-
-#     def __getitem__(self, id):
-#         return Reminder.retrieve_instance(id)
-
-
-# class UserFactory(object):
-#     __acl__ = [
-#         (Allow, 'group:admin', ALL_PERMISSIONS)
-#     ]
-
-#     def __init__(self, request):
-#         self.request = request
-
-#     def __getitem__(self, username):
-#         return User.by_username(username)
-
-
-# class AliasFactory(object):
-#     __acl__ = [
-#         (Allow, 'group:admin', ALL_PERMISSIONS)
-#     ]
-
-#     def __init__(self, request):
-#         self.request = request
-
-#     def __getitem(self, id):
-#         return Alias.by_id(id)
-
-
 # def groupfinder(username, request):
 #     user = User.by_username(username)
 #     if user:
@@ -216,19 +107,36 @@ def convert_to_naive_utc(delivery_time):
     naive_dt = utc_dt.replace(tzinfo=None)
     return naive_dt
 
+
+def check_alias_ownership(username, alias_id):
+    owned = False
+    alias_int = None
+    try:
+        alias_int = int(alias_id)
+    except ValueError:
+        return False
+    user = User.by_username(username)
+    for alias in user.aliases:
+        if alias.id == alias_int:
+            owned = True
+            break
+    return owned
+
+
 @view_config(route_name='create_reminder', renderer='templates/create_reminder.jinja2', permission='create')
 def create_reminder(request):
     username = request.authenticated_userid
     if request.method == 'POST':
         alias_id = request.params.get('alias_id')
+        owned = check_alias_ownership(username, alias_id)
+        if not owned:
+            return HTTPForbidden("You haven't registered this contact.")
         title = request.params.get('title')
         payload = request.params.get('payload')
         delivery_time = request.params.get('delivery_time')
         naive_dt = convert_to_naive_utc(delivery_time)
         reminder = Reminder.create_reminder(alias_id=alias_id, title=title,
             text_payload=payload)
-        delivery_time = request.params.get('delivery_time')
-        naive_dt = convert_to_naive_utc(delivery_time)
         rrule = RRule.create_rrule(reminder.id, naive_dt)
         reminder.rrule_id = rrule.id
         Reminder.parse_reminder(reminder.id)
@@ -242,18 +150,18 @@ def create_reminder(request):
         return {'aliases': aliases}
 
 
-@view_config(route_name='edit_reminder', renderer='templates/edit_reminder.jinja2', permission='edit')
-def edit_reminder(request):
-    reminder = request.context
-    if request.method == 'POST':
-        reminder.owner = request.authenticated_userid
-        reminder.title = request.params.get('title')
-        reminder.payload = request.params.get('payload')
-        reminder.delivery_time = request.params.get('delivery_time')
-        REMINDERS[reminder.title] = reminder
-        return HTTPFound(request.route_url('list'))
-    else:
-        return {'reminder': reminder}
+# @view_config(route_name='edit_reminder', renderer='templates/edit_reminder.jinja2', permission='edit')
+# def edit_reminder(request):
+#     reminder = request.context
+#     if request.method == 'POST':
+#         reminder.owner = request.authenticated_userid
+#         reminder.title = request.params.get('title')
+#         reminder.payload = request.params.get('payload')
+#         reminder.delivery_time = request.params.get('delivery_time')
+#         REMINDERS[reminder.title] = reminder
+#         return HTTPFound(request.route_url('list'))
+    # else:
+    #     return {'reminder': reminder}
 
 
 def send_confirmation_email(uuid, contact_info):

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import pytest
 import os
+import datetime
 from sqlalchemy import create_engine
 from scatterpeas import models
 from webtest import TestApp
@@ -17,6 +18,7 @@ os.environ['DATABASE_URL'] = TEST_DATABASE_URL
 
 # need some global variables
 uuid = ''
+alias_id = ''
 
 
 @pytest.fixture(scope='session')
@@ -66,6 +68,7 @@ def test_get_create_user_form(app):
 # message for the user, or just blow up in some unforeseen way.
 def test_create_user(app):
     global uuid
+    global alias_id
     params = {'username': 'user1',
               'password': 'password',
               'first_name': 'bob',
@@ -79,6 +82,7 @@ def test_create_user(app):
     # pull the uuid out of the db for the next step
     user = User.by_username('user1')
     alias = user.aliases[0]
+    alias_id = alias.id
     uuid = alias.uuids[0].uuid
 
 
@@ -118,3 +122,18 @@ def test_logout(app):
     assert 'Login' in redirected.body
     response = app.get('/createreminder', status='*')
     assert response.status_code == 403
+
+
+def test_create_reminder(app):
+    now = datetime.datetime.now()
+    naive_now = now.replace(tzinfo=None)
+    job_time = naive_now + datetime.timedelta(minutes=10)
+    login_helper('user1', 'password', app)
+    params = {'alias_id': alias_id,
+              'title': 'test title',
+              'payload': 'test body',
+              'delivery_time': job_time}
+    response = app.post('/createreminder', params=params, status='3*')
+    redirected = response.follow()
+    assert redirected.status_code == 200
+    assert 'test title' in redirected.body
