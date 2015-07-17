@@ -397,6 +397,7 @@ class UUID(Base):
                     created=None, session=None):
         if session is None:
             session = DBSession
+        uuid = uuid.uuid4()
         instance = cls(alias_id=alias_id, uuid=uuid,
                        confirmation_state=confirmation_state, created=created)
         session.add(instance)
