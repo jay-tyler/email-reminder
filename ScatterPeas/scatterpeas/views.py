@@ -327,7 +327,7 @@ def confirm_user(request):
     if confirmation_state == 1:
         Alias.activate(alias_id)
         UUID.success(uuid)
-        message = "Success! You may now send reminders to this contact."
+        message = "Success! You may now send reminders to this contact. Please log in to start making reminders."
     elif confirmation_state == 2:
         message = "This address has already been confirmed."
     elif confirmation_state == -1:
