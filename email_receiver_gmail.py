@@ -8,14 +8,17 @@ def get_email():
     username = ''
     password = ''
 
-    import pdb; pdb.set_trace()
-
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(username, password)
-    mail.select("inbox")
+    response = mail.select("inbox")
+    if response[0] == 'NO':
+        raise ValueError("Unknown Mailbox")
+
     result, data = mail.search(None, '(UNSEEN)')
     latest_email_uid = data[0].split()[-1]
+
     result, data = mail.fetch(latest_email_uid, '(RFC822)')
+
     raw_email = data[0][1]
     return raw_email
 
