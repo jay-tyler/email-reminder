@@ -13,6 +13,7 @@ from dateutil import parser
 import pytz
 import scripts
 import datetime
+from validate_email import validate_email
 
 from .models import (
     DBSession,
@@ -186,6 +187,9 @@ def create_user(request):
     if request.method == 'POST':
         username = request.params.get('username')
         password = request.params.get('password')
+        if not password:
+            error = "You must create a password."
+            return {'error': error}
         first_name = request.params.get('first_name')
         last_name = request.params.get('last_name')
         contact_info = request.params.get('contact_info')
@@ -193,7 +197,11 @@ def create_user(request):
         if contact_info.isdigit():
             default_medium = 2
         else:
-            default_medium = 1
+            if validate_email(contact_info) is True:
+                default_medium = 1
+            else:
+                error = "Contact information must be a valid email (jane@company.com) or a ten-digit number (1234567890)"
+                return {'error': error}
         timezone = 'US/Pacific'
         try:
             user = User.create_user(username=username, password=password,
