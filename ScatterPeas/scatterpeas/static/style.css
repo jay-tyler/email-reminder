@@ -81,6 +81,10 @@
  * -- PURE OVERRIDES--
  */
 
+ #splash-button {
+    margin-top: 7%;
+ }
+
 #sign-up-title {
     margin-bottom: 0;
  }
