@@ -137,3 +137,17 @@ def test_create_reminder(app):
     redirected = response.follow()
     assert redirected.status_code == 200
     assert 'test title' in redirected.body
+
+
+def test_create_reminder_bad_alias(app):
+    now = datetime.datetime.now()
+    naive_now = now.replace(tzinfo=None)
+    job_time = naive_now + datetime.timedelta(minutes=10)
+    login_helper('user1', 'password', app)
+    params = {'alias_id': 30,
+              'title': 'test title',
+              'payload': 'test body',
+              'delivery_time': job_time}
+    response = app.post('/createreminder', params=params, status='*')
+    assert response.status_code == 403
+    assert "You haven't registered this contact." in response.body
