@@ -1,9 +1,8 @@
 {% extends "base.jinja2" %}
 
 {% block menu %}
-    <li id="sign-up" class="home-menu-link pure-menu-item"><a href="create_reminder.html" class="pure-menu-link">New Reminder</a></li>
-    <li id="sign-up" class="home-menu-link pure-menu-item"><a href="" class="pure-menu-link">Settings</a></li>
-    <li id="sign-up" class="home-menu-link pure-menu-item"><a href="index.html#sign-up" class="pure-menu-link">Logout</a></li>
+    <li id="sign-up" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('create_reminder') }}" class="pure-menu-link">New Reminder</a></li>
+    <li id="sign-up" class="home-menu-link pure-menu-item"><a href="{{ request.route_url('logout') }}" class="pure-menu-link">Logout</a></li>
 {% endblock %}
 
 {% block body %}
@@ -37,11 +36,3 @@
     </div>
 </div>
 {% endblock %}
-
-
-<!-- {% for reminder in reminders %}
-    <h2>{{ reminder.title }}</h2>
-    <h3>{{ reminder.text_payload }}</h3>
-    <p>To: {{ reminder.alias.alias }}</p>
-    <p>{{ reminder.rrule.display_time }}</p>
-{% endfor %} -->
