@@ -393,12 +393,12 @@ class UUID(Base):
         nullable=False)
 
     @classmethod
-    def create_uuid(cls, alias_id, uuid=None, confirmation_state=None,
+    def create_uuid(cls, alias_id, uuid_=None, confirmation_state=None,
                     created=None, session=None):
         if session is None:
             session = DBSession
-        uuid = uuid.uuid4()
-        instance = cls(alias_id=alias_id, uuid=uuid,
+        uuid_ = str(uuid.uuid4())
+        instance = cls(alias_id=alias_id, uuid=uuid_,
                        confirmation_state=confirmation_state, created=created)
         session.add(instance)
         session.flush()
