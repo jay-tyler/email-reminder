@@ -13,7 +13,7 @@
         <p class="error"><strong>Error</strong>: {{ error }}</p>
       {%- endif %}
       <div id="form-wrapper" class="l-box-lrg pure-u-1 pure-u-md-2-5">
-          <form id="sign-up" class="pure-form pure-form-stacked">
+          <form action="{{ request.route_url('login') }}" method="POST" id="sign-up" class="pure-form pure-form-stacked">
               <fieldset>
                   <label for="username">Username</label>
                   <input id="username" name="username" type="text" placeholder="Your Username">
