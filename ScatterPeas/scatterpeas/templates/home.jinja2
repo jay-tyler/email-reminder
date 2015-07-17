@@ -10,31 +10,40 @@
             Lorem ipsum dolor sit amet, consectetur adipisicing elit.
         </p>
         <p>
-            <a href="#get-started" class="pure-button pure-button-primary">Get Started</a>
+            <a href="#sign-up" class="pure-button pure-button-primary">Get Started</a>
         </p>
     </div>
 </div>
 <div class="content-wrapper">
-    <div class="content">
+    <div id="sign-up" class="content">
         <h2 id="sign-up-title" class="content-head is-center">Sign up</h2>
         <div class="pure-g">
             <div id="get-started" class="l-box-lrg pure-u-1 pure-u-md-2-5">
-                <form id="sign-up" class="pure-form pure-form-stacked">
+                <form action="{{ request.route_url('create_user') }}" method="POST"  id="sign-up-form" class="pure-form pure-form-stacked">
                     <fieldset>
-                        <label for="name">First Name</label>
-                        <input id="first_name" type="text" placeholder="Your First Name">
-
-                        <label for="name">Last Name</label>
-                        <input id="last_name" type="text" placeholder="Your Last Name">
-
-
-                        <label for="email">Email</label>
-                        <input id="email" type="email" placeholder="Your Email">
-
+                        <label for="username">Username</label>
+                        <input id="username" type="text" name="username" placeholder="Username">
+                        
                         <label for="password">Password</label>
                         <input id="password" type="password" placeholder="Your Password">
+                        
+                        <label for="first_name">First Name</label>
+                        <input id="first_name" name="first_name" type="text" placeholder="Your First Name">
 
-                        <button id="sign-up-button" type="submit" class="pure-button">Sign Up</button>
+                        <label for="last_name">Last Name</label>
+                        <input id="last_name" name="last_name" type="text" placeholder="Your Last Name">
+
+
+                        <label for="email">Email Address or Phone (1234567890)</label>
+                        <input id="contact_info" name="contact_info" type="email" placeholder="Your Preferred Contact Info">
+
+                        <label for="contact">Contact Type</label>
+                        <select id="contact-type">
+                            <option value="1">Email</option>
+                            <option value="2">Text Message</option>
+                        </select>
+
+                        <button id="CUButton" type="submit" name="submit" class="pure-button">Sign Up</button>
                     </fieldset>
                 </form>
             </div>
