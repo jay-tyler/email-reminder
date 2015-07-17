@@ -322,8 +322,12 @@ def wait_for_confirmation(request):
 
 @view_config(route_name='confirm_user', renderer='templates/confirm.jinja2')
 def confirm_user(request):
+    message = ''
     uuid = request.matchdict.get('uuid')
-    alias_id, confirmation_state = UUID.get_alias(uuid)
+    try:
+        alias_id, confirmation_state = UUID.get_alias(uuid)
+    except NoResultFound:
+        return {'message': 'This is not a valid confirmation link. Please copy and paste the full link from your confirmation message.'}
     if confirmation_state == 1:
         Alias.activate(alias_id)
         UUID.success(uuid)

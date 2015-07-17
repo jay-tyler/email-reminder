@@ -82,7 +82,39 @@ def test_create_user(app):
     uuid = alias.uuids[0].uuid
 
 
+# can fail if uuid is used or expired, or doesn't exist
 def test_confirm_alias(app):
     response = app.get('/confirm/{}'.format(uuid))
     assert response.status_code == 200
     assert 'Success! You may now send reminders to this contact.' in response.body
+
+
+def test_confirm_bad_uuid(app):
+    response = app.get('/confirm/foobar')
+    assert response.status_code == 200
+    assert 'This is not a valid confirmation link.' in response.body
+
+
+def login_helper(username, password, app):
+    """Encapsulate app login for reuse in tests
+    Accept all status codes so that we can make assertions in tests
+    """
+    login_data = {'username': username, 'password': password}
+    return app.post('/login', params=login_data, status='*')
+
+
+def test_login(app):
+    response = login_helper('user1', 'password', app)
+    redirected = response.follow()
+    assert "Logout" in redirected.body
+    response = app.get('/createreminder', status='*')
+    assert response.status_code == 200
+
+
+def test_logout(app):
+    login_helper('user1', 'password', app)
+    response = app.get('/logout', status='3*')
+    redirected = response.follow()
+    assert 'Login' in redirected.body
+    response = app.get('/createreminder', status='*')
+    assert response.status_code == 403
