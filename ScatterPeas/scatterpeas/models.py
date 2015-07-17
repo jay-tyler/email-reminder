@@ -514,7 +514,6 @@ class Job(Base):
         now = datetime.utcnow()
         query_time = now + timedelta(minutes=minutes_out)
         return session.query(cls).filter(
-            now < Job.execution_time).filter(
             Job.execution_time < query_time).all()
 
 
