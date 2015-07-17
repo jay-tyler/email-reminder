@@ -54,9 +54,10 @@ Base = declarative_base()
 
 
 class Reminder(Base):
-    """Reminder table includes payload information for reminders, and
-    provides functionality for putting jobs onto the jobs table. Columns
-    include:
+    """Reminder table includes payload information for reminders.
+
+    Provides functionality for putting jobs onto the jobs table.
+    Columns include:
     -id
     -alias_id: ForeignKey to Alias table
     -title: Short version of reminder; required
